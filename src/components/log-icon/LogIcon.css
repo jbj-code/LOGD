@@ -1,0 +1,78 @@
+/* src/components/log-icon/LogIcon.css */
+
+.log-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: var(--color-text-on-accent-fill);
+  box-sizing: border-box;
+}
+
+.log-icon--sm {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-md);
+}
+
+.log-icon--sm .material-symbols-rounded {
+  font-size: 22px;
+}
+
+.log-icon--md {
+  width: 56px;
+  height: 56px;
+  border-radius: var(--radius-lg);
+}
+
+.log-icon--md .material-symbols-rounded {
+  font-size: 30px;
+}
+
+.log-icon--lg {
+  width: 80px;
+  height: 80px;
+  border-radius: var(--radius-xl);
+}
+
+.log-icon--lg .material-symbols-rounded {
+  font-size: 38px;
+}
+
+/* Fills icon-picker cells — button supplies aspect ratio. */
+.log-icon--grid {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  border-radius: var(--radius-md);
+}
+
+.log-icon--grid .material-symbols-rounded {
+  font-size: clamp(18px, 26cqw, 30px);
+}
+
+.log-icon--editable {
+  position: relative;
+}
+
+.log-icon--editable::after {
+  content: 'edit';
+  font-family: 'Material Symbols Rounded';
+  font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 20;
+  position: absolute;
+  bottom: -4px;
+  right: -4px;
+  width: 22px;
+  height: 22px;
+  border-radius: var(--radius-full);
+  background: var(--color-surface);
+  border: 1.5px solid var(--color-border);
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  text-align: center;
+  padding-top: 1px;
+}

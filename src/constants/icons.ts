@@ -1,0 +1,33 @@
+// src/constants/icons.ts
+// Curated list of Material Symbol names available as log icons.
+
+export const AVAILABLE_ICONS: string[] = [
+  'self_improvement',
+  'fitness_center',
+  'menu_book',
+  'directions_walk',
+  'bedtime',
+  'water_drop',
+  'restaurant',
+  'code',
+  'music_note',
+  'brush',
+  'favorite',
+  'star',
+  'sports_soccer',
+  'hiking',
+  'local_cafe',
+  'medication',
+  'spa',
+  'psychology',
+  'language',
+  'palette',
+  'school',
+  'work',
+  'pets',
+  'eco',
+  'wb_sunny',
+  'nights_stay',
+  'sports_basketball',
+  'piano',
+];

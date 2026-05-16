@@ -1,0 +1,138 @@
+/* src/components/fab-menu/FabMenu.css */
+
+.fab-menu {
+  display: block;
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 55;
+}
+
+.fab-menu__backdrop {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: calc(var(--nav-height) + var(--safe-bottom));
+  border: none;
+  padding: 0;
+  background: rgba(0, 0, 0, 0.42);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 320ms cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: opacity;
+  pointer-events: auto;
+}
+
+.fab-menu--open .fab-menu__backdrop {
+  opacity: 1;
+}
+
+.fab-menu__stack {
+  position: fixed;
+  right: calc((100vw - var(--app-shell-w)) / 2 + var(--space-4));
+  bottom: calc(var(--nav-height) + var(--safe-bottom) + var(--fab-gap-above-nav));
+  width: var(--fab-size);
+  height: var(--fab-size);
+  z-index: 1;
+}
+
+.fab-menu__actions {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + var(--space-3));
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--space-2);
+  pointer-events: none;
+}
+
+.fab-menu--open .fab-menu__actions {
+  pointer-events: auto;
+}
+
+.fab-menu__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-full);
+  border: 1px solid var(--color-border);
+  font-family: var(--font-family);
+  font-size: var(--text-base);
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  box-shadow: var(--shadow-md);
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+  opacity: 0;
+  transform: translate3d(0, 14px, 0) scale(0.96);
+  transition:
+    opacity 300ms cubic-bezier(0.22, 1, 0.36, 1),
+    transform 300ms cubic-bezier(0.22, 1, 0.36, 1),
+    border-color var(--transition-fast),
+    background var(--transition-fast);
+  will-change: transform, opacity;
+  touch-action: manipulation;
+}
+
+.fab-menu--open .fab-menu__chip {
+  opacity: 1;
+  transform: translate3d(0, 0, 0) scale(1);
+}
+
+.fab-menu--open .fab-menu__chip:nth-child(1) {
+  transition-delay: 50ms, 50ms;
+}
+
+.fab-menu--open .fab-menu__chip:nth-child(2) {
+  transition-delay: 100ms, 100ms;
+}
+
+.fab-menu__chip .material-symbols-rounded {
+  font-size: 20px;
+  color: var(--color-text-secondary);
+}
+
+.fab-menu__fab {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: var(--fab-size);
+  height: var(--fab-size);
+  border-radius: var(--radius-full);
+  border: none;
+  background: var(--color-green);
+  color: var(--color-green-text);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--shadow-md);
+  pointer-events: auto;
+  transition: box-shadow 280ms cubic-bezier(0.22, 1, 0.36, 1);
+  touch-action: manipulation;
+}
+
+.fab-menu__fab:active {
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+}
+
+.fab-menu--open .fab-menu__fab {
+  box-shadow: 0 10px 32px rgba(0, 0, 0, 0.42);
+}
+
+.fab-menu__fab-icon {
+  font-size: 34px;
+  line-height: 1;
+  display: block;
+  transition: transform 380ms cubic-bezier(0.34, 1.2, 0.64, 1);
+}
+
+.fab-menu--open .fab-menu__fab-icon {
+  transform: rotate(45deg);
+}

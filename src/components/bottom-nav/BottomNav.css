@@ -1,0 +1,61 @@
+/* src/components/bottom-nav/BottomNav.css */
+
+.bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: calc((100vw - var(--app-shell-w)) / 2);
+  width: var(--app-shell-w);
+  max-width: 100%;
+  background: var(--color-nav-bg);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-top: none;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+}
+
+.bottom-nav__items {
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  height: calc(var(--nav-height) + var(--safe-bottom));
+  padding-bottom: var(--safe-bottom);
+}
+
+.bottom-nav__item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--color-text-tertiary);
+  transition: color var(--transition-fast);
+  padding: var(--space-1) 0;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+.bottom-nav__item--active {
+  color: var(--color-green);
+}
+
+.bottom-nav__icon {
+  font-size: 24px;
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  transition: font-variation-settings var(--transition-fast);
+}
+
+.bottom-nav__item--active .bottom-nav__icon {
+  font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+}
+
+.bottom-nav__label {
+  font-size: var(--text-xs);
+  font-weight: 500;
+  line-height: 1;
+}

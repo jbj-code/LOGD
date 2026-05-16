@@ -1,0 +1,41 @@
+/* src/App.css
+ * Centered phone-width shell; main content scrolls inside a flex slot; bottom nav stays fixed.
+ */
+
+.app {
+  width: 100%;
+  max-width: var(--app-max-width);
+  min-height: 100dvh;
+  min-height: 100svh;
+  margin: 0 auto;
+  background: var(--color-bg);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.app__content {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  padding-bottom: calc(var(--nav-height) + var(--safe-bottom) + var(--space-3));
+}
+
+.app-route {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.app-route--scroll {
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+}
+
+.app-route--detail {
+  overflow: hidden;
+}

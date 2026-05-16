@@ -1,0 +1,138 @@
+/* src/screens/settings/SettingsScreen.css */
+
+.settings-screen {
+  padding: var(--space-6) var(--space-4) var(--space-4);
+}
+
+.settings-screen__header {
+  padding-top: var(--safe-top);
+  margin-bottom: var(--space-6);
+}
+
+.settings-screen__title {
+  font-size: var(--text-2xl);
+  font-weight: 700;
+  color: var(--color-text-primary);
+  margin: 0;
+  letter-spacing: -0.5px;
+}
+
+.settings-screen__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+/* ── Section ─────────────────────────────────────────────────── */
+.settings-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.settings-section__label {
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--color-text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  padding: 0 var(--space-1);
+}
+
+.settings-section__rows {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+/* ── Row ─────────────────────────────────────────────────────── */
+.settings-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  background: none;
+  border: none;
+  border-bottom: 1px solid var(--color-border);
+  width: 100%;
+  cursor: pointer;
+  text-align: left;
+  font-family: var(--font-family);
+  transition: background var(--transition-fast);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.settings-row:last-child {
+  border-bottom: none;
+}
+
+.settings-row:not(:disabled):active {
+  background: var(--color-surface-raised);
+}
+
+.settings-row:disabled {
+  cursor: default;
+}
+
+.settings-row__icon {
+  font-size: 20px;
+  color: var(--color-green);
+  width: 24px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.settings-row__label {
+  flex: 1;
+  font-size: var(--text-base);
+  font-weight: 500;
+  color: var(--color-text-primary);
+}
+
+.settings-row__right {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.settings-row__detail {
+  font-size: var(--text-base);
+  color: var(--color-text-tertiary);
+}
+
+.settings-row__chevron {
+  font-size: 18px;
+  color: var(--color-text-tertiary);
+}
+
+/* ── Toggle switch ───────────────────────────────────────────── */
+.toggle {
+  width: 44px;
+  height: 26px;
+  border-radius: var(--radius-full);
+  background: var(--color-border);
+  position: relative;
+  transition: background var(--transition-base);
+  flex-shrink: 0;
+}
+
+.toggle--on {
+  background: var(--color-green);
+}
+
+.toggle__thumb {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 20px;
+  height: 20px;
+  border-radius: var(--radius-full);
+  background: white;
+  box-shadow: var(--shadow-sm);
+  transition: transform var(--transition-base);
+}
+
+.toggle--on .toggle__thumb {
+  transform: translateX(18px);
+}
