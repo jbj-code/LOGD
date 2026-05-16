@@ -1,11 +1,15 @@
 # Build and deploy static site + PWA to GitHub Pages.
-# Repo Settings → Pages → Source: "GitHub Actions".
+#
+# Repo: Settings → Pages → Source: "GitHub Actions".
+# If push doesn't run this file: ensure `.github/workflows/` is committed on `main`.
+# Manual run: Actions tab → "Deploy GitHub Pages" → "Run workflow".
 
 name: Deploy GitHub Pages
 
 on:
   push:
     branches: [main, master]
+  workflow_dispatch:
 
 permissions:
   contents: read
