@@ -114,9 +114,12 @@
   /* Layout */
   --app-max-width:   430px;
   --app-shell-w:     min(100vw, var(--app-max-width));
-  --nav-height:      56px;
+  --nav-height:      50px;
   --safe-bottom:     env(safe-area-inset-bottom, 0px);
   --safe-top:        env(safe-area-inset-top, 0px);
+  /* Splash grid (boot animation) */
+  --splash-logo-cell: 52px;
+  --splash-logo-gap:  10px;
 
   /* Transition */
   --transition-fast: 150ms ease;

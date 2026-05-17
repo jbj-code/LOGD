@@ -219,13 +219,15 @@
 
 .icon-picker__grid {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-auto-rows: auto;
   gap: var(--space-3);
   flex: 1 1 auto;
-  min-height: 200px;
+  min-height: 0;
   max-height: none;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
+  align-content: start;
   padding-top: var(--space-2);
   padding-bottom: var(--space-2);
 }
@@ -233,22 +235,40 @@
 .icon-picker__btn {
   container-type: size;
   aspect-ratio: 1;
+  width: 100%;
+  min-width: 0;
+  min-height: 0;
   border-radius: var(--radius-md);
   border: 2px solid transparent;
+  background: transparent;
   cursor: pointer;
   display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
-  padding: var(--space-1);
+  align-items: stretch;
+  justify-content: stretch;
+  overflow: visible;
+  transition: transform var(--transition-fast), border-color var(--transition-fast);
+  /* Tiny inset so the colored tile sits just inside the selection ring */
+  padding: 3px;
+  box-sizing: border-box;
   touch-action: manipulation;
 }
 
+.icon-picker__btn .log-icon.log-icon--grid {
+  width: 100%;
+  height: 100%;
+}
+
+.icon-picker__btn .log-icon {
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+  border-radius: calc(var(--radius-md) - 3px);
+}
+
 .icon-picker__btn:active {
-  transform: scale(0.88);
+  transform: scale(0.92);
 }
 
 .icon-picker__btn--active {
-  box-shadow: 0 0 0 2px var(--color-bg), 0 0 0 4px var(--color-green);
+  border-color: var(--color-green);
 }

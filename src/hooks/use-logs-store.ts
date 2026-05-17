@@ -15,6 +15,7 @@ interface DbLogRow {
   color: string;
   archived: boolean;
   created_at: string;
+  notes?: string | null;
 }
 
 interface DbEntryRow {
@@ -38,6 +39,7 @@ const mergeLogs = (logRows: DbLogRow[], entryRows: DbEntryRow[]): Log[] => {
     color: row.color,
     archived: row.archived,
     createdAt: row.created_at,
+    notes: row.notes ?? '',
     entries: entriesByLog.get(row.id) ?? {},
   }));
 };
@@ -59,7 +61,9 @@ const fetchRemoteLogs = async (): Promise<Log[]> => {
 const loadFromStorage = (): Log[] => {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? (JSON.parse(raw) as Log[]) : [];
+    if (!raw) return [];
+    const parsed = JSON.parse(raw) as Log[];
+    return parsed.map((l) => ({ ...l, notes: typeof l.notes === 'string' ? l.notes : '' }));
   } catch {
     return [];
   }
@@ -112,7 +116,7 @@ export const useLogsStore = () => {
         const sb = getSupabaseClient();
         const { data: row, error } = await sb
           .from('logs')
-          .insert({ name: data.name, icon: data.icon, color: data.color })
+          .insert({ name: data.name, icon: data.icon, color: data.color, notes: '' })
           .select()
           .single();
         if (error) {
@@ -128,6 +132,7 @@ export const useLogsStore = () => {
           entries: {},
           createdAt: r.created_at,
           archived: r.archived,
+          notes: r.notes ?? '',
         };
         setLogs((prev) => [...prev, newLog]);
         return;
@@ -141,6 +146,7 @@ export const useLogsStore = () => {
         entries: {},
         createdAt: new Date().toISOString(),
         archived: false,
+        notes: '',
       };
       setLogs((prev) => [...prev, newLog]);
     },
@@ -148,12 +154,13 @@ export const useLogsStore = () => {
   );
 
   const updateLog = useCallback(
-    async (id: string, updates: Partial<Pick<Log, 'name' | 'icon' | 'color'>>) => {
+    async (id: string, updates: Partial<Pick<Log, 'name' | 'icon' | 'color' | 'notes'>>) => {
       if (usesSupabase) {
-        const patch: Partial<{ name: string; icon: string; color: string }> = {};
+        const patch: Partial<{ name: string; icon: string; color: string; notes: string }> = {};
         if (updates.name !== undefined) patch.name = updates.name;
         if (updates.icon !== undefined) patch.icon = updates.icon;
         if (updates.color !== undefined) patch.color = updates.color;
+        if (updates.notes !== undefined) patch.notes = updates.notes;
         if (Object.keys(patch).length === 0) return;
 
         const sb = getSupabaseClient();
@@ -193,7 +200,6 @@ export const useLogsStore = () => {
         const { error } = await sb.from('logs').update({ archived }).eq('id', id);
         if (error) {
           console.error('[useLogsStore] archiveLog', error);
-          setLogsError(error.message);
           return;
         }
       }

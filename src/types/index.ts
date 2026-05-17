@@ -9,6 +9,8 @@ export interface Log {
   entries: Record<string, boolean>;   // "YYYY-MM-DD" -> boolean
   createdAt: string;                  // ISO date string
   archived: boolean;
+  /** Optional longer description for the log (detail screen). */
+  notes: string;
 }
 
 export interface AppSettings {
@@ -22,4 +24,4 @@ export type NavScreen =
   | { tab: 'logs'; view: 'detail'; logId: string }
   | { tab: 'stats'; view: 'main' }
   | { tab: 'calendar'; view: 'main' }
-  | { tab: 'settings'; view: 'main' };
+  | { tab: 'settings'; view: 'main' | 'archived' };

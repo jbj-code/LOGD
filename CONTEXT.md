@@ -29,7 +29,7 @@ Built for **single-user** use today (no accounts). **`useLogsStore`** persists t
 
 ```
 src/
-  App.tsx / App.css       ← Shell: bottom nav, main slot, logs FAB, modals, detail overlay
+  App.tsx / App.css       ← Shell: bottom nav, main slot, splash boot, logs FAB, modals, detail/archived slide-in routes
   main.tsx / index.css    ← Entry; global resets; `.visually-hidden`
   lib/supabase.ts        ← Browser Supabase client (env-gated)
   styles/
@@ -39,25 +39,26 @@ src/
   constants/icons.ts      ← Allowed Material Symbol names for log icons
   utils/
     date.ts               ← Dates, month grids, getWeeksForCalendarYear, month labels for detail heat map
-    heat-map.ts           ← formatCalendarMonthHeading (logs header); formatMonthRangeForWeeks (legacy/helper)
+    heat-map.ts           ← formatCalendarMonthHeading ("March 2nd" logs header); formatMonthRangeForWeeks (legacy/helper)
     stats.ts              ← Streaks, consistency, totals
     id.ts                 ← Client UUID helper
   hooks/
-    use-logs-store.ts     ← CRUD, archive, toggle entry; Supabase or localStorage
+    use-logs-store.ts     ← CRUD, archive, notes updates, toggle entry; Supabase or localStorage
     use-theme.ts          ← data-theme on <html>, meta theme-color from computed --color-bg
   components/
-    bottom-nav/           ← Four tabs
+    bottom-nav/           ← Four tabs + safe-area padding
     fab-menu/             ← FAB + sheet (new log / quick log today)
     heat-map/             ← HeatMap: card (current month) vs detail (calendar year columns)
     modal/                ← Sheet mobile / centered desktop
     log-icon/             ← Colored tile + symbol
+    splash/               ← Boot splash (shown while Supabase loads + minimum display time)
   screens/
-    logs/                 ← LogsScreen (2-column cards), LogDetailScreen (year heat map + stats)
+    logs/                 ← LogsScreen (2-column cards), LogDetailScreen (year heat map + stats + notes)
     add-log/              ← AddLogModal
     quick-log/            ← QuickLogModal
     stats/                ← StatsScreen (charts)
     calendar/             ← CalendarScreen (tap day → detail panel; auto-selects today in current month)
-    settings/             ← Theme, archived count hint
+    settings/             ← SettingsScreen; ArchivedLogsScreen (restore / permanent delete)
 ```
 
 ### Data model
@@ -71,6 +72,7 @@ interface Log {
   entries: Record<string, boolean>; // "YYYY-MM-DD" → true when logged
   createdAt: string;                  // ISO
   archived: boolean;
+  notes: string;                      // Detail-screen memo (persisted)
 }
 ```
 
@@ -80,12 +82,13 @@ interface Log {
 type NavScreen =
   | { tab: 'logs'; view: 'list' }
   | { tab: 'logs'; view: 'detail'; logId: string }
-  | { tab: 'stats' | 'calendar' | 'settings'; view: 'main' };
+  | { tab: 'stats' | 'calendar'; view: 'main' }
+  | { tab: 'settings'; view: 'main' | 'archived' };
 ```
 
-- Opening a log sets `{ tab: 'logs', view: 'detail', logId }` and replaces main content with `LogDetailScreen`.
+- Opening a log sets `{ tab: 'logs', view: 'detail', logId }`; **`ArchivedLogsScreen`** uses `{ tab: 'settings', view: 'archived' }`. Both render in the main slot as **`app-route--detail`** (slide-in from the right when motion is allowed).
 - Invalid/missing `logId` resets to list (guard in `App.tsx`).
-- **No route transition animations** (instant swap).
+- **Boot:** **`SplashScreen`** until a minimum elapsed time passes and (when using Supabase) logs finish loading; **`refetch`** retry UI if load fails.
 
 ### Theming
 
@@ -95,7 +98,7 @@ type NavScreen =
 
 ### Heat maps (shared tokens)
 
-Defined in `tokens.css`: `--heat-square-gap`, `--heat-square-radius`, `--heat-cell-size`. Card (logs list) and detail (log detail) use the **same** visual tokens; detail scrolls **week columns** for a **calendar year** (`getWeeksForCalendarYear`), optional **year `<select>`**, scroll starts at **January**. Month labels omit stray **Dec** before Jan 1 (`monthLabelForWeekColumnInDetailYear`).
+Defined in `tokens.css`: `--heat-square-gap`, `--heat-square-radius`, `--heat-cell-size`. Card (logs list) and detail (log detail) use the **same** visual tokens; **`SplashScreen`** tiles reuse **`--heat-square-radius`** / heat colors for a consistent look. Detail scrolls **week columns** for a **calendar year** (`getWeeksForCalendarYear`), optional **year `<select>`**, scroll starts at **January**. Month labels omit stray **Dec** before Jan 1 (`monthLabelForWeekColumnInDetailYear`).
 
 ---
 
@@ -103,19 +106,14 @@ Defined in `tokens.css`: `--heat-square-gap`, `--heat-square-radius`, `--heat-ce
 
 | Done | Notes |
 |------|--------|
-| Logs list | Two-column grid (collapses to one column on narrow viewports); full-card `<button>`; month beside “Your Logs”; streak line between header and mini heat map |
-| Log detail | Calendar-year heat map, year picker when multiple years, stats pills, archive/delete menu |
+| Logs list | Two-column grid (collapses to one column on narrow viewports); full-card `<button>`; month beside “Your Logs” (`ordinalDayLabel` / `formatCalendarMonthHeading`); streak line between header and mini heat map |
+| Log detail | Calendar-year heat map, year picker when multiple years, stats pills; **notes** textarea (blur saves via **`updateLog`**); header **⋮** menu — **Archive** sets `archived: true` (hidden from main lists; stays in DB); **Delete** removes log row (entries cascade) |
+| Archived logs | From Settings → **Archived logs**: full-screen list of archived logs; **Restore** (`archiveLog(id, false)`) returns log to active lists; **Delete** confirms then **`deleteLog`** (Supabase + local state) |
 | Calendar | Month grid; **today auto-selected** when viewing current month; **green pill** = selected day; tap toggles selection; **detail panel** lists logs + swatches; **no** separate legend card |
-| Stats / Settings / Add / Quick log | As built |
+| Stats / Settings / Add / Quick log | Settings: theme + archived entry point (count); add/quick flows as built |
 | Dark/light | Persisted **`LOGD-theme`** |
-| Supabase | Env-driven sync via `useLogsStore`; tables **`logs`**, **`log_entries`**; SQL seed **`supabase/schema.sql`** |
-| PWA | `manifest.webmanifest`; **`LOGD`** install name; logo **`LOGD_logo.png`** |
-
-| Planned | |
-|---------|--|
-| Auth + RLS per user | |
-| Push reminders | |
-| Extra PWA icon sizes | If store validation complains |
+| Supabase | Env-driven sync via **`useLogsStore`**; tables **`logs`** (incl. **`archived`**, **`notes`**) and **`log_entries`**; SQL **`supabase/schema.sql`** includes **`ALTER`** for adding **`notes`** on existing DBs |
+| PWA / shell | `manifest.webmanifest`; **`LOGD`** install name; logo **`LOGD_logo.png`**; viewport / safe-area friendly layout |
 
 ---
 
@@ -143,7 +141,7 @@ $env:VITE_BASE="/YOUR_REPO/"; npm run build
 
 ### Supabase schema
 
-Paste **`supabase/schema.sql`** into the Supabase **SQL Editor** and click **Run** once (or run only the `grant` / `alter … disable row level security` lines if tables already exist). Grants **`anon`** so the browser client works without Auth today — tighten when adding **`user_id`** + policies.
+Paste **`supabase/schema.sql`** into the Supabase **SQL Editor** and click **Run** once (or run only the `grant` / `alter … disable row level security` lines if tables already exist). Grants **`anon`** so the browser client works without Auth today — tighten when adding **`user_id`** + policies. **`logs.notes`** defaults to `''`; use the file’s **`ADD COLUMN IF NOT EXISTS notes`** if you created **`logs`** before notes existed.
 
 ---
 
@@ -156,8 +154,9 @@ Paste **`supabase/schema.sql`** into the Supabase **SQL Editor** and click **Run
 5. **Log detail crash guard:** `todayStr` must be defined in `LogDetailScreen` (uses `today()`).
 6. **Heat map list cards:** invalid nested buttons were replaced by one outer `<button class="log-card">`.
 7. **Calendar:** selection resets when changing month via nav; returning to **current month** re-selects **today**.
-8. **GitHub Pages:** Deployment uses **`VITE_BASE`** (`vite.config.ts`). Default local build uses **`/`**; CI sets **`/<repository-name>/`** for project sites.
-9. **Guidelines:** Root **`GUIDELINES.md`**; **`.env.example`** documents `VITE_*` vars (no real secrets in git).
+8. **Archive vs delete:** Archive keeps the row and entries in Supabase with **`archived = true`**; permanent delete removes the **`logs`** row (FK cascade removes **`log_entries`**).
+9. **GitHub Pages:** Deployment uses **`VITE_BASE`** (`vite.config.ts`). Default local build uses **`/`**; CI sets **`/<repository-name>/`** for project sites.
+10. **Guidelines:** Root **`GUIDELINES.md`**; **`.env.example`** documents `VITE_*` vars (no real secrets in git).
 
 - **CONTEXT.md** — update after meaningful features (this file).
 - **Commits** — Conventional Commits (`feat`, `fix`, …) per `GUIDELINES.md`.

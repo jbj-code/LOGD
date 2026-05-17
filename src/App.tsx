@@ -8,6 +8,7 @@ import { useTheme } from './hooks/use-theme';
 import { today } from './utils/date';
 import { BottomNav } from './components/bottom-nav/BottomNav';
 import { FabMenu } from './components/fab-menu/FabMenu';
+import { SplashScreen } from './components/splash/SplashScreen';
 import { LogsScreen } from './screens/logs/LogsScreen';
 import { LogDetailScreen } from './screens/logs/LogDetailScreen';
 import { AddLogModal } from './screens/add-log/AddLogModal';
@@ -15,6 +16,7 @@ import { QuickLogModal } from './screens/quick-log/QuickLogModal';
 import { StatsScreen } from './screens/stats/StatsScreen';
 import { CalendarScreen } from './screens/calendar/CalendarScreen';
 import { SettingsScreen } from './screens/settings/SettingsScreen';
+import { ArchivedLogsScreen } from './screens/settings/ArchivedLogsScreen';
 import './App.css';
 
 const App = () => {
@@ -31,6 +33,7 @@ const App = () => {
     logsLoading,
     logsError,
     refetchLogs,
+    updateLog,
   } = useLogsStore();
   const { theme, toggleTheme } = useTheme();
 
@@ -38,6 +41,20 @@ const App = () => {
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [quickLogOpen, setQuickLogOpen] = useState(false);
   const [fabMenuOpen, setFabMenuOpen] = useState(false);
+
+  const [splashMinElapsed, setSplashMinElapsed] = useState(false);
+  const [splashHoldMs] = useState(() =>
+    typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
+      ? 280
+      : 1480,
+  );
+
+  useEffect(() => {
+    const id = window.setTimeout(() => setSplashMinElapsed(true), splashHoldMs);
+    return () => window.clearTimeout(id);
+  }, [splashHoldMs]);
+
+  const showSplash = !splashMinElapsed || (usesSupabase && logsLoading);
 
   useEffect(() => {
     queueMicrotask(() => setFabMenuOpen(false));
@@ -59,7 +76,7 @@ const App = () => {
           ? { tab, view: 'main' }
           : tab === 'calendar'
             ? { tab, view: 'main' }
-            : { tab, view: 'main' },
+            : { tab: 'settings', view: 'main' },
     );
   };
 
@@ -71,9 +88,7 @@ const App = () => {
     setScreen({ tab: 'logs', view: 'list' });
   };
 
-  const handleArchive = (logId: string) => {
-    archiveLog(logId, true);
-  };
+  const handleArchiveFromDetail = (logId: string) => archiveLog(logId, true);
 
   const showLogsFab = screen.tab === 'logs' && screen.view === 'list';
 
@@ -81,10 +96,12 @@ const App = () => {
     screen.tab === 'logs' && screen.view === 'detail' && 'logId' in screen ? screen.logId : undefined;
   const detailLog = logsDetailId ? getLog(logsDetailId) : undefined;
 
-  if (usesSupabase && logsLoading) {
+  const showArchivedOverlay = screen.tab === 'settings' && screen.view === 'archived';
+
+  if (showSplash) {
     return (
-      <div className="app app--boot" aria-busy="true" aria-live="polite">
-        <p className="app-boot__text">Loading logs…</p>
+      <div className="app">
+        <SplashScreen />
       </div>
     );
   }
@@ -122,7 +139,7 @@ const App = () => {
           <SettingsScreen
             theme={theme}
             onToggleTheme={toggleTheme}
-            onEditLogs={() => navigateToTab('logs')}
+            onOpenArchived={() => setScreen({ tab: 'settings', view: 'archived' })}
             archivedCount={archivedLogs.length}
           />
         );
@@ -149,7 +166,17 @@ const App = () => {
               onBack={navigateBack}
               onToggleEntry={toggleEntry}
               onDelete={deleteLog}
-              onArchive={handleArchive}
+              onArchive={handleArchiveFromDetail}
+              onSaveNotes={(id, notes) => void updateLog(id, { notes })}
+            />
+          </div>
+        ) : showArchivedOverlay ? (
+          <div key="settings-archived" className="app-route app-route--detail">
+            <ArchivedLogsScreen
+              logs={archivedLogs}
+              onBack={() => setScreen({ tab: 'settings', view: 'main' })}
+              onRestore={(id) => void archiveLog(id, false)}
+              onDelete={deleteLog}
             />
           </div>
         ) : (

@@ -1,7 +1,7 @@
 // src/screens/logs/LogDetailScreen.tsx
 // Detailed view of a single log — full heat map + stats; log today via header action.
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { Log } from '../../types';
 import { HeatMap } from '../../components/heat-map/HeatMap';
 import { LogIcon } from '../../components/log-icon/LogIcon';
@@ -27,8 +27,9 @@ interface LogDetailScreenProps {
   log: Log;
   onBack: () => void;
   onToggleEntry: (logId: string, date: string) => void;
-  onDelete: (logId: string) => void;
-  onArchive: (logId: string) => void;
+  onDelete: (logId: string) => Promise<void>;
+  onArchive: (logId: string) => Promise<void>;
+  onSaveNotes: (logId: string, notes: string) => void;
 }
 
 export const LogDetailScreen = ({
@@ -37,14 +38,20 @@ export const LogDetailScreen = ({
   onToggleEntry,
   onDelete,
   onArchive,
+  onSaveNotes,
 }: LogDetailScreenProps) => {
   const [showMenu, setShowMenu] = useState(false);
+  const [draftNotes, setDraftNotes] = useState(() => log.notes ?? '');
   const todayStr = today();
   const yearOptions = useMemo(() => heatMapYearOptions(log), [log]);
   const currentCalendarYear = new Date().getFullYear();
   const [heatmapYear, setHeatmapYear] = useState(() =>
     yearOptions.includes(currentCalendarYear) ? currentCalendarYear : (yearOptions[0] ?? currentCalendarYear),
   );
+
+  useEffect(() => {
+    queueMicrotask(() => setDraftNotes(log.notes ?? ''));
+  }, [log.id, log.notes]);
 
   const streak = getCurrentStreak(log);
   const longest = getLongestStreak(log);
@@ -56,22 +63,24 @@ export const LogDetailScreen = ({
     onToggleEntry(log.id, todayStr);
   };
 
-  const handleDelete = () => {
-    if (confirm(`Delete "${log.name}"? This cannot be undone.`)) {
-      onDelete(log.id);
-      onBack();
+  const handleDelete = async () => {
+    if (!confirm(`Delete "${log.name}"? This cannot be undone.`)) {
+      setShowMenu(false);
+      return;
     }
+    await onDelete(log.id);
     setShowMenu(false);
+    onBack();
   };
 
-  const handleArchive = () => {
-    onArchive(log.id);
-    onBack();
+  const handleArchive = async () => {
+    await onArchive(log.id);
     setShowMenu(false);
+    onBack();
   };
 
   return (
-    <div className="log-detail">
+    <div className={`log-detail ${showMenu ? 'log-detail--menu-open' : ''}`}>
       <div className="log-detail__header">
         <button type="button" className="log-detail__back" onClick={onBack} aria-label="Back">
           <span className="material-symbols-rounded">arrow_back_ios</span>
@@ -175,6 +184,29 @@ export const LogDetailScreen = ({
             {longest} {longest === 1 ? 'day' : 'days'}
           </span>
         </div>
+
+        <section className="log-detail__notes" aria-labelledby="log-detail-notes-label">
+          <label id="log-detail-notes-label" className="log-detail__notes-label" htmlFor="log-detail-notes-field">
+            Note
+          </label>
+          <textarea
+            id="log-detail-notes-field"
+            className="log-detail__notes-field"
+            value={draftNotes}
+            onChange={(e) => setDraftNotes(e.target.value)}
+            onBlur={() => {
+              if (draftNotes !== log.notes) {
+                onSaveNotes(log.id, draftNotes);
+              }
+            }}
+            placeholder="Optional — what this log is for, goals, reminders…"
+            rows={5}
+            maxLength={4000}
+            enterKeyHint="done"
+            autoCapitalize="sentences"
+            spellCheck
+          />
+        </section>
       </div>
 
       {showMenu && (

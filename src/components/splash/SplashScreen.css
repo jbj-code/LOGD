@@ -1,0 +1,65 @@
+/* src/components/splash/SplashScreen.css */
+
+.splash-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-bg);
+  padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px)
+    env(safe-area-inset-left, 0px);
+  box-sizing: border-box;
+}
+
+.splash-screen__grid {
+  display: grid;
+  grid-template-columns: repeat(3, var(--splash-logo-cell));
+  grid-template-rows: repeat(3, var(--splash-logo-cell));
+  gap: var(--splash-logo-gap);
+}
+
+.splash-screen__cell {
+  width: var(--splash-logo-cell);
+  height: var(--splash-logo-cell);
+  border-radius: var(--heat-square-radius);
+  background: var(--color-heat-inactive);
+  transform: scale(0.94);
+  opacity: 1;
+  animation: splash-cell-wave 460ms cubic-bezier(0.34, 1.15, 0.42, 1) forwards;
+  animation-delay: var(--splash-delay);
+}
+
+@keyframes splash-cell-wave {
+  0% {
+    background: var(--color-heat-inactive);
+    transform: scale(0.94);
+    filter: brightness(0.88);
+  }
+  55% {
+    transform: scale(1);
+  }
+  100% {
+    background: var(--color-green);
+    transform: scale(1);
+    filter: brightness(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .splash-screen__cell {
+    animation: splash-cell-wave-reduced 260ms ease forwards;
+    animation-delay: var(--splash-delay);
+  }
+
+  @keyframes splash-cell-wave-reduced {
+    from {
+      background: var(--color-heat-inactive);
+    }
+    to {
+      background: var(--color-green);
+      transform: scale(1);
+    }
+  }
+}

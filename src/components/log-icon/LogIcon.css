@@ -48,7 +48,7 @@
 }
 
 .log-icon--grid .material-symbols-rounded {
-  font-size: clamp(18px, 26cqw, 30px);
+  font-size: clamp(26px, 42cqw, 40px);
 }
 
 .log-icon--editable {

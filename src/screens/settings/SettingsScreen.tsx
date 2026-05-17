@@ -1,19 +1,19 @@
 // src/screens/settings/SettingsScreen.tsx
-// App settings — theme toggle and log management (personal build; no About section).
+// App settings — theme toggle and archived logs entry.
 
 import './SettingsScreen.css';
 
 interface SettingsScreenProps {
   theme: 'dark' | 'light';
   onToggleTheme: () => void;
-  onEditLogs: () => void;
+  onOpenArchived: () => void;
   archivedCount: number;
 }
 
 export const SettingsScreen = ({
   theme,
   onToggleTheme,
-  onEditLogs,
+  onOpenArchived,
   archivedCount,
 }: SettingsScreenProps) => (
   <div className="settings-screen">
@@ -24,16 +24,10 @@ export const SettingsScreen = ({
     <div className="settings-screen__body">
       <SettingsSection label="General">
         <SettingsRow
-          icon="edit_note"
-          label="Edit Logs"
-          onTap={onEditLogs}
-          accessory="chevron"
-        />
-        <SettingsRow
           icon="inventory_2"
           label="Archived Logs"
           detail={archivedCount > 0 ? String(archivedCount) : undefined}
-          onTap={onEditLogs}
+          onTap={onOpenArchived}
           accessory="chevron"
         />
         <SettingsRow

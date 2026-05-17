@@ -7,6 +7,7 @@
   max-width: var(--app-max-width);
   min-height: 100dvh;
   min-height: 100svh;
+  min-height: -webkit-fill-available;
   margin: 0 auto;
   background: var(--color-bg);
   position: relative;
@@ -38,6 +39,23 @@
 
 .app-route--detail {
   overflow: hidden;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .app-route--detail {
+    animation: app-detail-enter 340ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+}
+
+@keyframes app-detail-enter {
+  from {
+    transform: translateX(100%);
+    opacity: 0.98;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
 }
 
 .app--boot {

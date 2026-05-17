@@ -9,6 +9,7 @@ create table if not exists public.logs (
   icon text not null default 'edit_note',
   color text not null default '#4ade80',
   archived boolean not null default false,
+  notes text not null default '',
   created_at timestamptz not null default now()
 );
 
@@ -32,6 +33,9 @@ grant select, insert, update, delete on table public.log_entries to anon, authen
 
 alter table public.logs disable row level security;
 alter table public.log_entries disable row level security;
+
+-- Existing projects created before `notes`: add column (safe to re-run).
+alter table public.logs add column if not exists notes text not null default '';
 
 -- Optional: helps if you add Supabase Realtime later
 -- alter publication supabase_realtime add table public.logs;

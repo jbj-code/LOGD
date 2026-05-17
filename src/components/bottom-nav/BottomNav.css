@@ -13,14 +13,16 @@
   z-index: 50;
   display: flex;
   flex-direction: column;
+  /* Single safe-area inset here — do not also bake safe-bottom into __items height */
+  padding-bottom: var(--safe-bottom);
 }
 
 .bottom-nav__items {
   display: flex;
   flex-direction: row;
   align-items: stretch;
-  height: calc(var(--nav-height) + var(--safe-bottom));
-  padding-bottom: var(--safe-bottom);
+  height: var(--nav-height);
+  min-height: var(--nav-height);
 }
 
 .bottom-nav__item {
@@ -29,13 +31,13 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 2px;
+  gap: 1px;
   background: none;
   border: none;
   cursor: pointer;
   color: var(--color-text-tertiary);
   transition: color var(--transition-fast);
-  padding: var(--space-1) 0;
+  padding: var(--space-1) 0 2px;
   -webkit-tap-highlight-color: transparent;
   touch-action: manipulation;
 }
