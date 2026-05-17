@@ -32,7 +32,7 @@ export const Modal = ({
   useLayoutEffect(() => {
     if (isOpen) {
       window.clearTimeout(closeTimerRef.current);
-      setMounted(true);
+      queueMicrotask(() => setMounted(true));
     }
   }, [isOpen]);
 

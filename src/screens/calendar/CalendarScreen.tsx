@@ -1,7 +1,7 @@
 // src/screens/calendar/CalendarScreen.tsx
 // Monthly calendar: tap a day to see which logs were completed.
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import type { Log } from '../../types';
 import { formatDateLabel, toDateString, today } from '../../utils/date';
 import './CalendarScreen.css';
@@ -23,23 +23,23 @@ export const CalendarScreen = ({ logs }: CalendarScreenProps) => {
   const [selectedDay, setSelectedDay] = useState<number | null>(() => new Date().getDate());
   const todayStr = today();
 
-  useEffect(() => {
+  const goToMonth = (nextYear: number, nextMonth: number) => {
+    setYear(nextYear);
+    setMonth(nextMonth);
     const n = new Date();
-    if (year === n.getFullYear() && month === n.getMonth()) {
-      setSelectedDay(n.getDate());
-    } else {
-      setSelectedDay(null);
-    }
-  }, [year, month]);
+    setSelectedDay(
+      nextYear === n.getFullYear() && nextMonth === n.getMonth() ? n.getDate() : null,
+    );
+  };
 
   const prevMonth = () => {
-    if (month === 0) { setMonth(11); setYear((y) => y - 1); }
-    else setMonth((m) => m - 1);
+    if (month === 0) goToMonth(year - 1, 11);
+    else goToMonth(year, month - 1);
   };
 
   const nextMonth = () => {
-    if (month === 11) { setMonth(0); setYear((y) => y + 1); }
-    else setMonth((m) => m + 1);
+    if (month === 11) goToMonth(year + 1, 0);
+    else goToMonth(year, month + 1);
   };
 
   const firstDay = new Date(year, month, 1);

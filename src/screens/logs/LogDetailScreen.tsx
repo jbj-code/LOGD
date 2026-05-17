@@ -1,7 +1,7 @@
 // src/screens/logs/LogDetailScreen.tsx
 // Detailed view of a single log — full heat map + stats; log today via header action.
 
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import type { Log } from '../../types';
 import { HeatMap } from '../../components/heat-map/HeatMap';
 import { LogIcon } from '../../components/log-icon/LogIcon';
@@ -45,12 +45,6 @@ export const LogDetailScreen = ({
   const [heatmapYear, setHeatmapYear] = useState(() =>
     yearOptions.includes(currentCalendarYear) ? currentCalendarYear : (yearOptions[0] ?? currentCalendarYear),
   );
-
-  useEffect(() => {
-    const opts = heatMapYearOptions(log);
-    const cy = new Date().getFullYear();
-    setHeatmapYear(opts.includes(cy) ? cy : opts[0] ?? cy);
-  }, [log.id]);
 
   const streak = getCurrentStreak(log);
   const longest = getLongestStreak(log);

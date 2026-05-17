@@ -4,6 +4,11 @@
 # If push doesn't run this file: ensure `.github/workflows/` is committed on `main`.
 # Manual run: Actions tab → "Deploy GitHub Pages" → "Run workflow".
 
+# Build step reads VITE_SUPABASE_* from repo secrets so production matches local .env.local.
+# Repo → Settings → Secrets and variables → Actions:
+#   VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY
+# If omitted, the app builds in localStorage-only mode (offline).
+
 name: Deploy GitHub Pages
 
 on:
@@ -37,6 +42,8 @@ jobs:
         env:
           # GitHub Pages project URL is https://<user>.github.io/<repo>/
           VITE_BASE: /${{ github.event.repository.name }}/
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
         run: npm run build
 
       - uses: actions/upload-pages-artifact@v3

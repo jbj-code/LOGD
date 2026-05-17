@@ -18,8 +18,20 @@ import { SettingsScreen } from './screens/settings/SettingsScreen';
 import './App.css';
 
 const App = () => {
-  const { logs, activeLogs, archivedLogs, addLog, deleteLog, archiveLog, toggleEntry, getLog } =
-    useLogsStore();
+  const {
+    logs,
+    activeLogs,
+    archivedLogs,
+    addLog,
+    deleteLog,
+    archiveLog,
+    toggleEntry,
+    getLog,
+    usesSupabase,
+    logsLoading,
+    logsError,
+    refetchLogs,
+  } = useLogsStore();
   const { theme, toggleTheme } = useTheme();
 
   const [screen, setScreen] = useState<NavScreen>({ tab: 'logs', view: 'list' });
@@ -28,14 +40,14 @@ const App = () => {
   const [fabMenuOpen, setFabMenuOpen] = useState(false);
 
   useEffect(() => {
-    setFabMenuOpen(false);
+    queueMicrotask(() => setFabMenuOpen(false));
   }, [screen]);
 
   useEffect(() => {
     if (screen.tab !== 'logs' || screen.view !== 'detail') return;
     const id = 'logId' in screen ? screen.logId : undefined;
     if (typeof id !== 'string' || !logs.some((l) => l.id === id)) {
-      setScreen({ tab: 'logs', view: 'list' });
+      queueMicrotask(() => setScreen({ tab: 'logs', view: 'list' }));
     }
   }, [screen, logs]);
 
@@ -68,6 +80,25 @@ const App = () => {
   const logsDetailId =
     screen.tab === 'logs' && screen.view === 'detail' && 'logId' in screen ? screen.logId : undefined;
   const detailLog = logsDetailId ? getLog(logsDetailId) : undefined;
+
+  if (usesSupabase && logsLoading) {
+    return (
+      <div className="app app--boot" aria-busy="true" aria-live="polite">
+        <p className="app-boot__text">Loading logs…</p>
+      </div>
+    );
+  }
+
+  if (usesSupabase && logsError) {
+    return (
+      <div className="app app--boot">
+        <p className="app-boot__text app-boot__text--error">{logsError}</p>
+        <button type="button" className="app-boot__retry" onClick={() => void refetchLogs()}>
+          Retry
+        </button>
+      </div>
+    );
+  }
 
   const renderMain = () => {
     switch (screen.tab) {

@@ -4,7 +4,7 @@
 import { useState, useEffect } from 'react';
 
 type Theme = 'dark' | 'light';
-const STORAGE_KEY = 'logd-theme';
+const STORAGE_KEY = 'LOGD-theme';
 
 const applyTheme = (theme: Theme) => {
   document.documentElement.setAttribute('data-theme', theme);

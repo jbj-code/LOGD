@@ -1,10 +1,10 @@
-# CONTEXT.md — Logd
+# CONTEXT.md — LOGD
 
 ## What it is
 
-Logd is a personal PWA habit tracker. Each **Log** is a yes/no daily activity (e.g. Gym, Stretching). The user marks completion per day; the app shows **heat-map-style** grids, **streaks**, **consistency**, and a **month calendar** with per-day detail.
+**LOGD** is a personal PWA habit tracker. Each **Log** is a yes/no daily activity (e.g. Gym, Stretching). The user marks completion per day; the app shows **heat-map-style** grids, **streaks**, **consistency**, and a **month calendar** with per-day detail.
 
-Built for **single-user** use (no accounts). Data persists in **localStorage**; **Supabase** is planned later — keep the store boundary (`useLogsStore`) clean for swapping backends.
+Built for **single-user** use today (no accounts). **`useLogsStore`** persists to **Supabase** when `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` are set; otherwise **localStorage** (`LOGD-logs`). Same boundary keeps swapping backends straightforward.
 
 ---
 
@@ -17,7 +17,8 @@ Built for **single-user** use (no accounts). Data persists in **localStorage**; 
 | Styling | Plain CSS + **`src/styles/tokens.css`** (CSS custom properties for dark/light) |
 | Icons | Google Material Symbols Rounded (CDN in `index.html`) |
 | Font | System stack (`tokens.css` `--font-family`) |
-| Data | `useLogsStore` → localStorage key `logd-logs` |
+| Data | **`useLogsStore`** → Supabase tables `logs` / `log_entries` if env set; else localStorage **`LOGD-logs`** |
+| Backend | **Supabase** (`@supabase/supabase-js`); schema SQL in **`supabase/schema.sql`** |
 | Routing | **No router** — `NavScreen` state + callbacks in `App.tsx` |
 
 ---
@@ -30,6 +31,7 @@ Built for **single-user** use (no accounts). Data persists in **localStorage**; 
 src/
   App.tsx / App.css       ← Shell: bottom nav, main slot, logs FAB, modals, detail overlay
   main.tsx / index.css    ← Entry; global resets; `.visually-hidden`
+  lib/supabase.ts        ← Browser Supabase client (env-gated)
   styles/
     tokens.css            ← Source of truth: colors, spacing, radii, typography, heat-map tokens
     theme.ts              ← LOG_COLORS[] only (picker / logic hex values)
@@ -41,7 +43,7 @@ src/
     stats.ts              ← Streaks, consistency, totals
     id.ts                 ← Client UUID helper
   hooks/
-    use-logs-store.ts     ← CRUD, archive, toggle entry, persist logs
+    use-logs-store.ts     ← CRUD, archive, toggle entry; Supabase or localStorage
     use-theme.ts          ← data-theme on <html>, meta theme-color from computed --color-bg
   components/
     bottom-nav/           ← Four tabs
@@ -82,7 +84,7 @@ type NavScreen =
 ```
 
 - Opening a log sets `{ tab: 'logs', view: 'detail', logId }` and replaces main content with `LogDetailScreen`.
-- Invalid/missing `logId` resets to list (guard `useEffect` in `App.tsx`).
+- Invalid/missing `logId` resets to list (guard in `App.tsx`).
 - **No route transition animations** (instant swap).
 
 ### Theming
@@ -105,14 +107,15 @@ Defined in `tokens.css`: `--heat-square-gap`, `--heat-square-radius`, `--heat-ce
 | Log detail | Calendar-year heat map, year picker when multiple years, stats pills, archive/delete menu |
 | Calendar | Month grid; **today auto-selected** when viewing current month; **green pill** = selected day; tap toggles selection; **detail panel** lists logs + swatches; **no** separate legend card |
 | Stats / Settings / Add / Quick log | As built |
-| Dark/light | Persisted `logd-theme` |
-| PWA | vite-plugin-pwa; PNG icons for install may still be incomplete |
+| Dark/light | Persisted **`LOGD-theme`** |
+| Supabase | Env-driven sync via `useLogsStore`; tables **`logs`**, **`log_entries`**; SQL seed **`supabase/schema.sql`** |
+| PWA | `manifest.webmanifest`; **`LOGD`** install name; logo **`LOGD_logo.png`** |
 
 | Planned | |
 |---------|--|
-| Supabase sync | Replace / augment `useLogsStore` |
+| Auth + RLS per user | |
 | Push reminders | |
-| Full PWA icon set | 192×192, 512×512 PNGs if needed |
+| Extra PWA icon sizes | If store validation complains |
 
 ---
 
@@ -122,28 +125,15 @@ Defined in `tokens.css`: `--heat-square-gap`, `--heat-square-radius`, `--heat-ce
 npm run dev          # Dev server (default http://localhost:5173)
 npm run build        # Production build → dist/ (uses `base: "/"` unless `VITE_BASE` is set)
 npm run preview      # Serve dist/
+npm run lint         # ESLint
 npx tsc --noEmit     # Typecheck only
 ```
 
 ### Deploy to GitHub Pages
 
-1. **Create an empty repo on GitHub** (e.g. `Logd`) — no README/license if you’ll push an existing tree.
-2. **Git init & push** (from project root):
-
-   ```bash
-   git init
-   git branch -M main
-   git add .
-   git commit -m "chore: initial commit"
-   git remote add origin https://github.com/YOUR_USER/YOUR_REPO.git
-   git push -u origin main
-   ```
-
-3. **Enable Pages:** Repo → **Settings** → **Pages** → **Build and deployment** → Source: **GitHub Actions**.
-4. The workflow **`.github/workflows/deploy-github-pages.yml`** builds with `VITE_BASE=/<repo>/` so asset URLs match `https://YOUR_USER.github.io/YOUR_REPO/`.
-5. After the first successful run, open that URL and install the PWA from the browser menu.
-
-**Root site (`username.github.io`):** If the repo is your special user site, Pages URL is `https://USER.github.io/` with **`base: '/'`**. Edit the workflow Build step: remove or set `VITE_BASE: /` (do **not** use `/${{ github.event.repository.name }}/`).
+1. **Repo → Settings → Secrets and variables → Actions → New repository secret** — add exactly **`VITE_SUPABASE_URL`** and **`VITE_SUPABASE_ANON_KEY`** (same values as `.env.local`). The workflow **`deploy-github-pages.yml`** passes them into `npm run build`. Omit them only if you want the shipped build to stay **localStorage-only**.
+2. **Pages:** Settings → Pages → Source: **GitHub Actions**.
+3. Workflow builds with **`VITE_BASE=/<repo>/`** for project sites (`https://USER.github.io/REPO/`).
 
 **Local build matching Pages:**
 
@@ -151,18 +141,23 @@ npx tsc --noEmit     # Typecheck only
 $env:VITE_BASE="/YOUR_REPO/"; npm run build
 ```
 
+### Supabase schema
+
+Paste **`supabase/schema.sql`** into the Supabase **SQL Editor** and click **Run** once (or run only the `grant` / `alter … disable row level security` lines if tables already exist). Grants **`anon`** so the browser client works without Auth today — tighten when adding **`user_id`** + policies.
+
 ---
 
 ## Gotchas
 
 1. **No React Router** — all navigation is props + `App.tsx` state.
 2. **`tokens.css`** owns visual tokens; don’t scatter hex/radius/spacing in components except `theme.ts` palette array and unavoidable SVG/assets.
-3. **localStorage:** `logd-logs` (logs JSON), `logd-theme` (`dark` | `light`).
-4. **Log detail crash guard:** `todayStr` must be defined in `LogDetailScreen` (uses `today()`).
-5. **Heat map list cards:** invalid nested buttons were replaced by one outer `<button class="log-card">`.
-6. **Calendar:** selection state resets when changing month; returning to **current month** re-selects **today**.
-7. **GitHub Pages:** Deployment uses **`VITE_BASE`** (`vite.config.ts`). Default local build uses **`/`**; CI sets **`/<repository-name>/`** for project sites.
-8. **Guidelines:** See root `GUIDELINES.md`; `.env.example` documents future `VITE_*` vars (no secrets committed).
+3. **Persistence:** **`LOGD-logs`** / **`LOGD-theme`** in localStorage (offline mode); Supabase replaces log storage when env vars are set (legacy keys `logd-*` are **not** migrated automatically).
+4. **npm package name** stays **`logd`** (lowercase; npm requirement); product name everywhere else is **LOGD**.
+5. **Log detail crash guard:** `todayStr` must be defined in `LogDetailScreen` (uses `today()`).
+6. **Heat map list cards:** invalid nested buttons were replaced by one outer `<button class="log-card">`.
+7. **Calendar:** selection resets when changing month via nav; returning to **current month** re-selects **today**.
+8. **GitHub Pages:** Deployment uses **`VITE_BASE`** (`vite.config.ts`). Default local build uses **`/`**; CI sets **`/<repository-name>/`** for project sites.
+9. **Guidelines:** Root **`GUIDELINES.md`**; **`.env.example`** documents `VITE_*` vars (no real secrets in git).
 
 - **CONTEXT.md** — update after meaningful features (this file).
 - **Commits** — Conventional Commits (`feat`, `fix`, …) per `GUIDELINES.md`.
