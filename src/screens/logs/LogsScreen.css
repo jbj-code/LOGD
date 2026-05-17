@@ -3,7 +3,8 @@
 .logs-screen {
   flex: 1;
   min-height: 0;
-  padding: var(--space-6) var(--space-4) var(--space-4);
+  /* Safe area once here — avoid stacking safe-top on the header (was double on real devices). */
+  padding: calc(var(--safe-top) + var(--space-6)) var(--space-4) var(--space-4);
 }
 
 /* ── Header ─────────────────────────────────────────────────── */
@@ -14,7 +15,6 @@
   gap: var(--space-3);
   width: 100%;
   margin-bottom: var(--space-6);
-  padding-top: var(--safe-top);
 }
 
 .logs-screen__title {

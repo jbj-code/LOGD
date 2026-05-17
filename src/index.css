@@ -15,8 +15,11 @@ html {
   font-size: 16px;
   -webkit-text-size-adjust: 100%;
   scroll-behavior: smooth;
-  min-height: 100%;
-  min-height: -webkit-fill-available;
+  /* iOS Safari / standalone PWA: avoid short layout viewport vs visible screen (gap under fixed UI). */
+  height: 100%;
+  height: -webkit-fill-available;
+  /* `100vw` includes scrollbar width on some engines; clip X drift from centered shell + vw math. */
+  overflow-x: hidden;
 }
 
 body {
@@ -28,11 +31,14 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overscroll-behavior: none;
+  min-height: 100%;
   min-height: 100dvh;
   min-height: -webkit-fill-available;
+  overflow-x: hidden;
 }
 
 #root {
+  min-height: 100%;
   min-height: 100dvh;
   min-height: -webkit-fill-available;
 }

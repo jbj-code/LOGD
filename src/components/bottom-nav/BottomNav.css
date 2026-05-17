@@ -3,18 +3,20 @@
 .bottom-nav {
   position: fixed;
   bottom: 0;
-  left: calc((100vw - var(--app-shell-w)) / 2);
-  width: var(--app-shell-w);
+  left: 50%;
+  /* Center within shell; promotes compositing layer (helps some iOS PWA fixed-footer gaps). */
+  transform: translate3d(-50%, 0, 0);
+  width: min(100vw, var(--app-max-width));
   max-width: 100%;
-  background: var(--color-nav-bg);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border-top: none;
+  box-sizing: border-box;
+  /* Opaque bar avoids sub-pixel / compositor gaps under translucent + backdrop-filter on iOS PWA. */
+  background: var(--color-surface);
+  border-top: 1px solid var(--color-border);
   z-index: 50;
   display: flex;
   flex-direction: column;
   /* Single safe-area inset here — do not also bake safe-bottom into __items height */
-  padding-bottom: var(--safe-bottom);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
 .bottom-nav__items {

@@ -134,12 +134,12 @@
   flex: 1;
   overflow-y: auto;
   padding: var(--space-5) var(--space-4);
-  padding-bottom: max(var(--space-8), calc(var(--safe-bottom) + var(--space-6)));
+  /* Bottom inset for nav + home strip lives on `.app__content`; keep scroll slack only here. */
+  padding-bottom: var(--space-8);
   display: flex;
   flex-direction: column;
   gap: var(--space-5);
-  /* Helps iOS scroll focused fields above the keyboard / home indicator */
-  scroll-padding-bottom: max(var(--space-10), var(--safe-bottom), env(safe-area-inset-bottom, 0px));
+  scroll-padding-bottom: var(--space-8);
 }
 
 /* ── Log identity ─────────────────────────────────────────────── */
