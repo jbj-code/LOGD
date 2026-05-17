@@ -157,7 +157,6 @@ const App = () => {
 
   return (
     <div className="app">
-      <BottomNav activeTab={screen.tab} onTabChange={navigateToTab} />
       <main className="app__content">
         {detailLog ? (
           <div key={detailLog.id} className="app-route app-route--detail">
@@ -183,14 +182,19 @@ const App = () => {
           <div className="app-route app-route--scroll">{renderMain()}</div>
         )}
       </main>
-      {showLogsFab && (
-        <FabMenu
-          isOpen={fabMenuOpen}
-          onOpenChange={setFabMenuOpen}
-          onNewLogType={() => setAddModalOpen(true)}
-          onQuickLog={() => setQuickLogOpen(true)}
-        />
-      )}
+      <div className="app-bottom-shell">
+        <div className="app-bottom-shell__column">
+          {showLogsFab && (
+            <FabMenu
+              isOpen={fabMenuOpen}
+              onOpenChange={setFabMenuOpen}
+              onNewLogType={() => setAddModalOpen(true)}
+              onQuickLog={() => setQuickLogOpen(true)}
+            />
+          )}
+          <BottomNav activeTab={screen.tab} onTabChange={navigateToTab} />
+        </div>
+      </div>
       <AddLogModal
         isOpen={addModalOpen}
         onClose={() => setAddModalOpen(false)}

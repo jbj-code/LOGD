@@ -40,7 +40,7 @@ export const FabMenu = ({
   const close = () => onOpenChange(false);
 
   return (
-    <div ref={rootRef} className={`fab-menu ${isOpen ? 'fab-menu--open' : ''}`}>
+    <>
       {isOpen && (
         <button
           type="button"
@@ -49,44 +49,45 @@ export const FabMenu = ({
           onClick={close}
         />
       )}
+      <div ref={rootRef} className={`fab-menu--dock ${isOpen ? 'fab-menu--open' : ''}`}>
+        <div className="fab-menu__stack">
+          <div className="fab-menu__actions">
+            <button
+              type="button"
+              className="fab-menu__chip"
+              onClick={() => {
+                close();
+                onQuickLog();
+              }}
+            >
+              <span className="material-symbols-rounded">today</span>
+              Log today
+            </button>
+            <button
+              type="button"
+              className="fab-menu__chip"
+              onClick={() => {
+                close();
+                onNewLogType();
+              }}
+            >
+              <span className="material-symbols-rounded">add_task</span>
+              New log type
+            </button>
+          </div>
 
-      <div className="fab-menu__stack">
-        <div className="fab-menu__actions">
           <button
             type="button"
-            className="fab-menu__chip"
-            onClick={() => {
-              close();
-              onQuickLog();
-            }}
+            className="fab-menu__fab"
+            aria-expanded={isOpen}
+            aria-haspopup="true"
+            aria-label={isOpen ? 'Close actions' : 'Open actions'}
+            onClick={() => onOpenChange(!isOpen)}
           >
-            <span className="material-symbols-rounded">today</span>
-            Log today
-          </button>
-          <button
-            type="button"
-            className="fab-menu__chip"
-            onClick={() => {
-              close();
-              onNewLogType();
-            }}
-          >
-            <span className="material-symbols-rounded">add_task</span>
-            New log type
+            <span className="material-symbols-rounded fab-menu__fab-icon">add</span>
           </button>
         </div>
-
-        <button
-          type="button"
-          className="fab-menu__fab"
-          aria-expanded={isOpen}
-          aria-haspopup="true"
-          aria-label={isOpen ? 'Close actions' : 'Open actions'}
-          onClick={() => onOpenChange(!isOpen)}
-        >
-          <span className="material-symbols-rounded fab-menu__fab-icon">add</span>
-        </button>
       </div>
-    </div>
+    </>
   );
 };

@@ -41,6 +41,30 @@
   overflow: hidden;
 }
 
+/* Full-bleed fixed bottom chrome (nav + safe area). Avoids iOS PWA gaps from transformed,
+ * narrow fixed bars; FAB anchors inside the column so it stays aligned with the nav. */
+.app-bottom-shell {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  background: var(--color-surface);
+  border-top: 1px solid var(--color-border);
+  box-sizing: border-box;
+  pointer-events: none;
+}
+
+.app-bottom-shell__column {
+  position: relative;
+  width: min(100vw, var(--app-max-width));
+  max-width: 100%;
+  margin: 0 auto;
+  box-sizing: border-box;
+  pointer-events: auto;
+}
+
 @media (prefers-reduced-motion: no-preference) {
   .app-route--detail {
     animation: app-detail-enter 340ms cubic-bezier(0.22, 1, 0.36, 1) both;

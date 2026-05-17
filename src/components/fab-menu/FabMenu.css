@@ -1,15 +1,25 @@
 /* src/components/fab-menu/FabMenu.css */
 
-.fab-menu {
-  display: block;
-  position: fixed;
-  inset: 0;
+/* Dock sits inside .app-bottom-shell__column — same positioning context as the nav (no scroll jitter). */
+.fab-menu--dock {
+  position: absolute;
+  right: var(--space-4);
+  z-index: 2;
+  width: var(--fab-size);
+  height: var(--fab-size);
+  /* Bottom of shell column = bottom of nav row; lift FAB by nav height + gap */
+  bottom: calc(var(--nav-height) + var(--fab-gap-above-nav));
   pointer-events: none;
-  z-index: 55;
 }
 
+.fab-menu__fab,
+.fab-menu--open .fab-menu__actions {
+  pointer-events: auto;
+}
+
+/* Dim main content only; shell (nav + FAB) stays z-index above */
 .fab-menu__backdrop {
-  position: absolute;
+  position: fixed;
   top: 0;
   left: 0;
   right: 0;
@@ -24,6 +34,7 @@
   transition: opacity 320ms cubic-bezier(0.22, 1, 0.36, 1);
   will-change: opacity;
   pointer-events: auto;
+  z-index: 45;
 }
 
 .fab-menu--open .fab-menu__backdrop {
@@ -31,12 +42,9 @@
 }
 
 .fab-menu__stack {
-  position: fixed;
-  right: calc((100vw - var(--app-shell-w)) / 2 + var(--space-4));
-  bottom: calc(var(--nav-height) + var(--safe-bottom) + var(--fab-gap-above-nav));
+  position: relative;
   width: var(--fab-size);
   height: var(--fab-size);
-  z-index: 1;
 }
 
 .fab-menu__actions {
