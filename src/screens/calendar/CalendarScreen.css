@@ -1,11 +1,11 @@
 /* src/screens/calendar/CalendarScreen.css */
 
 .calendar-screen {
-  padding: calc(var(--safe-top) + var(--space-6)) var(--space-4) var(--space-4);
+  padding: var(--screen-inset-top) var(--screen-inset-x) var(--screen-inset-bottom);
 }
 
 .calendar-screen__header {
-  margin-bottom: var(--space-5);
+  margin-bottom: var(--screen-header-gap);
 }
 
 .calendar-screen__title {

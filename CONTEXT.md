@@ -45,8 +45,9 @@ src/
   hooks/
     use-logs-store.ts     ← CRUD, archive, notes updates, toggle entry; Supabase or localStorage
     use-theme.ts          ← data-theme on <html>, meta theme-color from computed --color-bg
+    use-pwa-viewport-bottom-bleed.ts ← Standalone only: zeros --pwa-bottom-extra (Safari-only gap math)
   components/
-    bottom-nav/           ← Four tabs + safe-area padding
+    bottom-nav/           ← Tab row (fixed chrome is .app-bottom-shell in App.css — see iOS PWA shell below)
     fab-menu/             ← FAB + sheet (new log / quick log today)
     heat-map/             ← HeatMap: card (current month) vs detail (calendar year columns)
     modal/                ← Sheet mobile / centered desktop
@@ -113,7 +114,39 @@ Defined in `tokens.css`: `--heat-square-gap`, `--heat-square-radius`, `--heat-ce
 | Stats / Settings / Add / Quick log | Settings: theme + archived entry point (count); add/quick flows as built |
 | Dark/light | Persisted **`LOGD-theme`** |
 | Supabase | Env-driven sync via **`useLogsStore`**; tables **`logs`** (incl. **`archived`**, **`notes`**) and **`log_entries`**; SQL **`supabase/schema.sql`** includes **`ALTER`** for adding **`notes`** on existing DBs |
-| PWA / shell | `manifest.webmanifest`; **`LOGD`** install name; logo **`LOGD_logo.png`**; viewport / safe-area friendly layout |
+| PWA / shell | `manifest.webmanifest`; **`display: standalone`**; bottom nav flush on iOS home-screen app (see **iOS PWA shell**); main tab titles use **`--screen-inset-*`** tokens |
+| Icon picker | **`AVAILABLE_ICONS`** in `constants/icons.ts`; scroll grid in Add Log; new icons appended after originals |
+
+---
+
+## iOS PWA shell (bottom nav — do not regress)
+
+The home-screen app bottom tab bar is **working and flush** with the physical bottom (no “chin” gap). Treat this as settled unless testing on a new iOS version.
+
+**What fixed it (do not undo casually):**
+
+| Piece | Role |
+|-------|------|
+| **`index.html`** | `viewport-fit=cover`; **`apple-mobile-web-app-status-bar-style` = `black`** (not `black-translucent` — that combo caused ~59px chin with percent heights). |
+| **`src/index.css`** | `html`, `body`, `#root` use **`height: 100vh`** / **`min-height: 100vh`**, not **`height: 100%`**. |
+| **`App.tsx`** | Bottom chrome **`createPortal(..., document.body)`** so `position: fixed` is viewport-relative. |
+| **`App.css` `.app-bottom-shell`** | Full-bleed fixed shell; **`background: var(--color-surface)`** on outer + **`padding-bottom: env(safe-area-inset-bottom)`**; **`min-height`** = nav + safe area. |
+| **`usePwaViewportBottomBleed`** | In **standalone**, sets **`--pwa-bottom-extra: 0`** (gap math is for in-Safari toolbar only). |
+
+**Do not:** reintroduce `black-translucent`, stack `height: 100%` on `html`/`body`, nest fixed nav inside `.app` without portal, or put safe-area padding only on the inner bar without outer background.
+
+Reference: [iOS PWA gotcha gist](https://gist.github.com/fozzedout/5e77925381991a9570151550992baf14).
+
+---
+
+## Main screen headings (top inset)
+
+Tab screens (**Logs**, **Stats**, **Calendar**, **Settings**) pad once at the screen root:
+
+- **`--screen-inset-top`**: `calc(var(--safe-top) + var(--space-3))` — not `space-6` (was too much air under the status bar in standalone).
+- **`--screen-header-gap`**: space below the `h1` row before content.
+
+Detail / archived routes already used tighter top padding; main tabs now share the same tokens in **`tokens.css`**.
 
 ---
 
@@ -157,6 +190,8 @@ Paste **`supabase/schema.sql`** into the Supabase **SQL Editor** and click **Run
 8. **Archive vs delete:** Archive keeps the row and entries in Supabase with **`archived = true`**; permanent delete removes the **`logs`** row (FK cascade removes **`log_entries`**).
 9. **GitHub Pages:** Deployment uses **`VITE_BASE`** (`vite.config.ts`). Default local build uses **`/`**; CI sets **`/<repository-name>/`** for project sites.
 10. **Guidelines:** Root **`GUIDELINES.md`**; **`.env.example`** documents `VITE_*` vars (no real secrets in git).
+11. **iOS PWA bottom nav:** See **iOS PWA shell** above — avoid drive-by “fixes” to `index.html` status bar, root `height`, or `.app-bottom-shell`.
+12. **PWA updates:** Delete home-screen icon → open live **`https://USER.github.io/REPO/`** in Safari → refresh → confirm in Safari → Add to Home Screen. New icons in picker are **below** the original set (scroll). Installed PWA cache is separate from Safari private tab.
 
 - **CONTEXT.md** — update after meaningful features (this file).
 - **Commits** — Conventional Commits (`feat`, `fix`, …) per `GUIDELINES.md`.
