@@ -5,9 +5,7 @@
 .app {
   width: 100%;
   max-width: var(--app-max-width);
-  min-height: 100%;
-  min-height: 100dvh;
-  min-height: -webkit-fill-available;
+  height: 100%;
   margin: 0 auto;
   background: var(--color-bg);
   position: relative;
@@ -35,30 +33,41 @@
   overflow-y: auto;
   overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
 }
 
 .app-route--detail {
   overflow: hidden;
 }
 
-/* Full-bleed fixed bottom chrome (nav + safe area). Avoids iOS PWA gaps from transformed,
- * narrow fixed bars; FAB anchors inside the column so it stays aligned with the nav. */
+/* Full-bleed fixed bottom chrome (ported to document.body — see App.tsx).
+ * Outer shell paints safe-area inset + divider; inner matches app shell width like yOS-style bar. */
 .app-bottom-shell {
   position: fixed;
   bottom: 0;
   left: 0;
   right: 0;
+  width: 100%;
+  box-sizing: border-box;
   z-index: 50;
   padding-bottom: env(safe-area-inset-bottom, 0px);
+  /* Same fill on outer + padded zone so safe-area gutter never flashes body/window chroma “gap”. */
   background: var(--color-surface);
   border-top: 1px solid var(--color-border);
-  box-sizing: border-box;
+  isolation: isolate;
   pointer-events: none;
+}
+
+.app-bottom-shell__inner {
+  width: min(100vw, var(--app-max-width));
+  max-width: 100%;
+  margin-inline: auto;
+  box-sizing: border-box;
 }
 
 .app-bottom-shell__column {
   position: relative;
-  width: min(100vw, var(--app-max-width));
+  width: 100%;
   max-width: 100%;
   margin: 0 auto;
   box-sizing: border-box;

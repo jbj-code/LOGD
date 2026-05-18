@@ -2,6 +2,7 @@
 // Root component — manages navigation state and wires screens to data hooks.
 
 import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import type { NavScreen, Tab } from './types';
 import { useLogsStore } from './hooks/use-logs-store';
 import { useTheme } from './hooks/use-theme';
@@ -182,19 +183,6 @@ const App = () => {
           <div className="app-route app-route--scroll">{renderMain()}</div>
         )}
       </main>
-      <div className="app-bottom-shell">
-        <div className="app-bottom-shell__column">
-          {showLogsFab && (
-            <FabMenu
-              isOpen={fabMenuOpen}
-              onOpenChange={setFabMenuOpen}
-              onNewLogType={() => setAddModalOpen(true)}
-              onQuickLog={() => setQuickLogOpen(true)}
-            />
-          )}
-          <BottomNav activeTab={screen.tab} onTabChange={navigateToTab} />
-        </div>
-      </div>
       <AddLogModal
         isOpen={addModalOpen}
         onClose={() => setAddModalOpen(false)}
@@ -206,6 +194,25 @@ const App = () => {
         logs={activeLogs}
         onToggleToday={(logId) => toggleEntry(logId, today())}
       />
+      {typeof document !== 'undefined' &&
+        createPortal(
+          <div className="app-bottom-shell">
+            <div className="app-bottom-shell__inner">
+              <div className="app-bottom-shell__column">
+                {showLogsFab && (
+                  <FabMenu
+                    isOpen={fabMenuOpen}
+                    onOpenChange={setFabMenuOpen}
+                    onNewLogType={() => setAddModalOpen(true)}
+                    onQuickLog={() => setQuickLogOpen(true)}
+                  />
+                )}
+                <BottomNav activeTab={screen.tab} onTabChange={navigateToTab} />
+              </div>
+            </div>
+          </div>,
+          document.body,
+        )}
     </div>
   );
 };

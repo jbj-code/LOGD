@@ -18,8 +18,7 @@ html {
   /* iOS Safari / standalone PWA: avoid short layout viewport vs visible screen (gap under fixed UI). */
   height: 100%;
   height: -webkit-fill-available;
-  /* `100vw` includes scrollbar width on some engines; clip X drift from centered shell + vw math. */
-  overflow-x: hidden;
+  overflow: hidden;
 }
 
 body {
@@ -31,16 +30,19 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overscroll-behavior: none;
+  height: 100%;
   min-height: 100%;
   min-height: 100dvh;
   min-height: -webkit-fill-available;
-  overflow-x: hidden;
+  overflow: hidden;
 }
 
 #root {
+  height: 100%;
   min-height: 100%;
   min-height: 100dvh;
   min-height: -webkit-fill-available;
+  overflow: hidden;
 }
 
 .visually-hidden {
