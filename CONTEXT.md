@@ -141,12 +141,12 @@ Reference: [iOS PWA gotcha gist](https://gist.github.com/fozzedout/5e77925381991
 
 ## Main screen headings (top inset)
 
-Tab screens (**Logs**, **Stats**, **Calendar**, **Settings**) pad once at the screen root:
+Tab screens (**Logs**, **Stats**, **Calendar**, **Settings**) pad once at the screen root via **`tokens.css`**:
 
-- **`--screen-inset-top`**: `calc(var(--safe-top) + var(--space-3))` — not `space-6` (was too much air under the status bar in standalone).
+- **`--screen-inset-top`**: `calc(max(var(--safe-top), 3.6875rem) + var(--space-2))` — iOS standalone often sets **`env(safe-area-inset-top)` to `0`** with an opaque status bar while content still renders under the Dynamic Island; the **`max(..., 3.6875rem)`** (~59px) floor keeps titles below the pill. When `safe-top` is already larger, that value wins.
 - **`--screen-header-gap`**: space below the `h1` row before content.
 
-Detail / archived routes already used tighter top padding; main tabs now share the same tokens in **`tokens.css`**.
+Do **not** drop top padding to only `safe-top + space-3` without the floor — titles will sit under the clock/battery.
 
 ---
 
