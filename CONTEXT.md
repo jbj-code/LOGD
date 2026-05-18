@@ -114,7 +114,7 @@ Defined in `tokens.css`: `--heat-square-gap`, `--heat-square-radius`, `--heat-ce
 | Stats / Settings / Add / Quick log | Settings: theme + archived entry point (count); add/quick flows as built |
 | Dark/light | Persisted **`LOGD-theme`** |
 | Supabase | Env-driven sync via **`useLogsStore`**; tables **`logs`** (incl. **`archived`**, **`notes`**) and **`log_entries`**; SQL **`supabase/schema.sql`** includes **`ALTER`** for adding **`notes`** on existing DBs |
-| PWA / shell | `manifest.webmanifest`; **`display: standalone`**; bottom nav flush on iOS home-screen app (see **iOS PWA shell**); main tab titles use **`--screen-inset-*`** tokens |
+| PWA / shell | `manifest.webmanifest`; **`display: standalone`**; bottom nav flush on iOS home-screen app (see **iOS PWA shell**); main tab top padding **`calc(var(--safe-top) + var(--space-6))`** per screen CSS |
 | Icon picker | **`AVAILABLE_ICONS`** in `constants/icons.ts`; scroll grid in Add Log; new icons appended after originals |
 
 ---
@@ -136,17 +136,6 @@ The home-screen app bottom tab bar is **working and flush** with the physical bo
 **Do not:** reintroduce `black-translucent`, stack `height: 100%` on `html`/`body`, nest fixed nav inside `.app` without portal, or put safe-area padding only on the inner bar without outer background.
 
 Reference: [iOS PWA gotcha gist](https://gist.github.com/fozzedout/5e77925381991a9570151550992baf14).
-
----
-
-## Main screen headings (top inset)
-
-Tab screens (**Logs**, **Stats**, **Calendar**, **Settings**) pad once at the screen root via **`tokens.css`**:
-
-- **`--screen-inset-top`**: `calc(max(var(--safe-top), 3.6875rem) + var(--space-2))` — iOS standalone often sets **`env(safe-area-inset-top)` to `0`** with an opaque status bar while content still renders under the Dynamic Island; the **`max(..., 3.6875rem)`** (~59px) floor keeps titles below the pill. When `safe-top` is already larger, that value wins.
-- **`--screen-header-gap`**: space below the `h1` row before content.
-
-Do **not** drop top padding to only `safe-top + space-3` without the floor — titles will sit under the clock/battery.
 
 ---
 

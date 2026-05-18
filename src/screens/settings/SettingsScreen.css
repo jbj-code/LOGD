@@ -1,11 +1,11 @@
 /* src/screens/settings/SettingsScreen.css */
 
 .settings-screen {
-  padding: var(--screen-inset-top) var(--screen-inset-x) var(--screen-inset-bottom);
+  padding: calc(var(--safe-top) + var(--space-6)) var(--space-4) var(--space-4);
 }
 
 .settings-screen__header {
-  margin-bottom: var(--screen-header-gap);
+  margin-bottom: var(--space-6);
 }
 
 .settings-screen__title {

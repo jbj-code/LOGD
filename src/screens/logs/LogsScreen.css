@@ -4,7 +4,7 @@
   flex: 1;
   min-height: 0;
   /* Safe area once here — avoid stacking safe-top on the header (was double on real devices). */
-  padding: var(--screen-inset-top) var(--screen-inset-x) var(--screen-inset-bottom);
+  padding: calc(var(--safe-top) + var(--space-6)) var(--space-4) var(--space-4);
 }
 
 /* ── Header ─────────────────────────────────────────────────── */
@@ -14,7 +14,7 @@
   justify-content: space-between;
   gap: var(--space-3);
   width: 100%;
-  margin-bottom: var(--screen-header-gap);
+  margin-bottom: var(--space-6);
 }
 
 .logs-screen__title {
