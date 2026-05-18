@@ -1,19 +1,21 @@
 /* src/styles/screen-page.css
- * Main tab layout: header stays fixed below status bar; only __scroll moves (iOS PWA). */
+ * Main tab layout — mirrors .log-detail (header + scroll body). */
 
 .screen-page {
-  flex: 1;
-  min-height: 0;
   display: flex;
   flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  height: 100%;
   background: var(--color-bg);
 }
 
 .screen-page__header {
   flex-shrink: 0;
-  z-index: 2;
-  padding: var(--screen-header-pad-top) var(--screen-inset-x) var(--screen-header-pad-bottom);
+  padding: var(--shell-header-pad-top) var(--shell-header-pad-x) var(--shell-header-pad-bottom);
   background: var(--color-bg);
+  position: relative;
+  z-index: 10;
 }
 
 .screen-page__scroll {
