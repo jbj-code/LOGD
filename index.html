@@ -4,8 +4,10 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content" />
     <meta name="theme-color" content="#0f0f0f" id="theme-color-meta" />
+    <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <!-- Opaque status bar — black-translucent + viewport-fit=cover + height:100% causes ~59px iOS PWA "chin" gap -->
+    <meta name="apple-mobile-web-app-status-bar-style" content="black" />
     <meta name="apple-mobile-web-app-title" content="LOGD" />
     <meta name="description" content="Simple daily logs. Track the things that matter." />
     <link rel="icon" href="%BASE_URL%LOGD_logo.png" type="image/png" />
