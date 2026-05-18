@@ -50,11 +50,12 @@
   width: 100%;
   box-sizing: border-box;
   z-index: 50;
+  /* Older iOS needs constant(); newer prefers env(). Padding fills home-indicator strip with shell bg. */
+  padding-bottom: constant(safe-area-inset-bottom);
   padding-bottom: env(safe-area-inset-bottom, 0px);
   /* Same fill on outer + padded zone so safe-area gutter never flashes body/window chroma “gap”. */
   background: var(--color-surface);
   border-top: 1px solid var(--color-border);
-  isolation: isolate;
   pointer-events: none;
 }
 

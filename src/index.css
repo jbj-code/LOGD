@@ -31,18 +31,28 @@ body {
   -moz-osx-font-smoothing: grayscale;
   overscroll-behavior: none;
   height: 100%;
-  min-height: 100%;
-  min-height: 100dvh;
-  min-height: -webkit-fill-available;
+  height: -webkit-fill-available;
   overflow: hidden;
 }
 
 #root {
   height: 100%;
-  min-height: 100%;
-  min-height: 100dvh;
-  min-height: -webkit-fill-available;
+  height: -webkit-fill-available;
   overflow: hidden;
+}
+
+/* iPhone / touch: smallest stable viewport height avoids dynamic-toolbar vs layout viewport mismatch
+ * that leaves empty bands below fixed bottom UI on standalone Safari / PWA. */
+@media (pointer: coarse) {
+  @supports (height: 100svh) {
+    html,
+    body,
+    #root {
+      height: 100svh;
+      max-height: 100svh;
+      min-height: 100svh;
+    }
+  }
 }
 
 .visually-hidden {

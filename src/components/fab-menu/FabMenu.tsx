@@ -31,7 +31,13 @@ export const FabMenu = ({
     const onPointerDown = (e: PointerEvent) => {
       const el = rootRef.current;
       if (!el || !isOpen) return;
-      if (!el.contains(e.target as Node)) onOpenChange(false);
+      /* composedPath handles iOS/WebKit quirks where event.target isn't the element under the finger */
+      const path = typeof e.composedPath === 'function' ? e.composedPath() : [];
+      const hitInside =
+        path.length > 0
+          ? path.some((node) => node instanceof Node && el.contains(node))
+          : el.contains(e.target as Node);
+      if (!hitInside) onOpenChange(false);
     };
     if (isOpen) document.addEventListener('pointerdown', onPointerDown, true);
     return () => document.removeEventListener('pointerdown', onPointerDown, true);
@@ -40,7 +46,7 @@ export const FabMenu = ({
   const close = () => onOpenChange(false);
 
   return (
-    <>
+    <div ref={rootRef} className={`fab-menu-root ${isOpen ? 'fab-menu-root--open' : ''}`}>
       {isOpen && (
         <button
           type="button"
@@ -49,7 +55,7 @@ export const FabMenu = ({
           onClick={close}
         />
       )}
-      <div ref={rootRef} className={`fab-menu--dock ${isOpen ? 'fab-menu--open' : ''}`}>
+      <div className={`fab-menu--dock ${isOpen ? 'fab-menu--open' : ''}`}>
         <div className="fab-menu__stack">
           <div className="fab-menu__actions">
             <button
@@ -88,6 +94,6 @@ export const FabMenu = ({
           </button>
         </div>
       </div>
-    </>
+    </div>
   );
 };

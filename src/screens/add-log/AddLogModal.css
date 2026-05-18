@@ -218,10 +218,12 @@
 }
 
 .icon-picker__grid {
+  container-type: inline-size;
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   grid-auto-rows: auto;
-  gap: var(--space-3);
+  column-gap: var(--space-2);
+  row-gap: var(--space-6);
   flex: 1 1 auto;
   min-height: 0;
   max-height: none;
@@ -233,7 +235,6 @@
 }
 
 .icon-picker__btn {
-  container-type: size;
   aspect-ratio: 1;
   width: 100%;
   min-width: 0;
