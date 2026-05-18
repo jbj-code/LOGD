@@ -41,20 +41,6 @@ body {
   overflow: hidden;
 }
 
-/* iPhone / touch: smallest stable viewport height avoids dynamic-toolbar vs layout viewport mismatch
- * that leaves empty bands below fixed bottom UI on standalone Safari / PWA. */
-@media (pointer: coarse) {
-  @supports (height: 100svh) {
-    html,
-    body,
-    #root {
-      height: 100svh;
-      max-height: 100svh;
-      min-height: 100svh;
-    }
-  }
-}
-
 .visually-hidden {
   position: absolute;
   width: 1px;

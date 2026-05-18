@@ -3,6 +3,7 @@
 
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { usePwaViewportBottomBleed } from './hooks/use-pwa-viewport-bottom-bleed';
 import type { NavScreen, Tab } from './types';
 import { useLogsStore } from './hooks/use-logs-store';
 import { useTheme } from './hooks/use-theme';
@@ -37,6 +38,8 @@ const App = () => {
     updateLog,
   } = useLogsStore();
   const { theme, toggleTheme } = useTheme();
+
+  usePwaViewportBottomBleed();
 
   const [screen, setScreen] = useState<NavScreen>({ tab: 'logs', view: 'list' });
   const [addModalOpen, setAddModalOpen] = useState(false);

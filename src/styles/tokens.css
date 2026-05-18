@@ -117,6 +117,8 @@
   --nav-height:      50px;
   --safe-bottom:     env(safe-area-inset-bottom, 0px);
   --safe-top:        env(safe-area-inset-top, 0px);
+  /* iOS PWA layout gap under screen — updated by usePwaViewportBottomBleed */
+  --pwa-bottom-extra: 0px;
   /* Splash grid (boot animation) */
   --splash-logo-cell: 52px;
   --splash-logo-gap:  10px;

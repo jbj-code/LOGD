@@ -19,7 +19,9 @@
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  padding-bottom: calc(var(--nav-height) + var(--safe-bottom) + var(--space-3));
+  padding-bottom: calc(
+    var(--nav-height) + var(--safe-bottom) + var(--space-3) + var(--pwa-bottom-extra, 0px)
+  );
 }
 
 .app-route {
@@ -41,7 +43,8 @@
 }
 
 /* Full-bleed fixed bottom chrome (ported to document.body — see App.tsx).
- * Outer shell paints safe-area inset + divider; inner matches app shell width like yOS-style bar. */
+ * Outer shell paints safe-area inset + divider; inner matches app shell width like yOS-style bar.
+ * In standalone PWA there is no Safari URL bar — min-height keeps the bar + home strip opaque (no body “gap”). */
 .app-bottom-shell {
   position: fixed;
   bottom: 0;
@@ -50,9 +53,11 @@
   width: 100%;
   box-sizing: border-box;
   z-index: 50;
-  /* Older iOS needs constant(); newer prefers env(). Padding fills home-indicator strip with shell bg. */
-  padding-bottom: constant(safe-area-inset-bottom);
-  padding-bottom: env(safe-area-inset-bottom, 0px);
+  /* Older iOS needs constant(); newer prefers env(). Optional --pwa-bottom-extra from visualViewport. */
+  padding-bottom: calc(constant(safe-area-inset-bottom) + var(--pwa-bottom-extra, 0px));
+  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + var(--pwa-bottom-extra, 0px));
+  min-height: calc(var(--nav-height) + constant(safe-area-inset-bottom) + var(--pwa-bottom-extra, 0px));
+  min-height: calc(var(--nav-height) + env(safe-area-inset-bottom, 0px) + var(--pwa-bottom-extra, 0px));
   /* Same fill on outer + padded zone so safe-area gutter never flashes body/window chroma “gap”. */
   background: var(--color-surface);
   border-top: 1px solid var(--color-border);

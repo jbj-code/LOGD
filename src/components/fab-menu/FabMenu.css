@@ -27,7 +27,7 @@
   top: 0;
   left: 0;
   right: 0;
-  bottom: calc(var(--nav-height) + var(--safe-bottom));
+  bottom: calc(var(--nav-height) + var(--safe-bottom) + var(--pwa-bottom-extra, 0px));
   border: none;
   padding: 0;
   margin: 0;

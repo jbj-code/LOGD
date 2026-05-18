@@ -1,5 +1,5 @@
 // src/constants/icons.ts
-// Curated list of Material Symbol names available as log icons.
+// Curated list of Material Symbol names (snake_case) available as log icons.
 
 export const AVAILABLE_ICONS: string[] = [
   'self_improvement',
@@ -30,4 +30,33 @@ export const AVAILABLE_ICONS: string[] = [
   'nights_stay',
   'sports_basketball',
   'piano',
+  /* Habits — stretch, recovery, body care */
+  'accessibility_new',
+  'sports_gymnastics',
+  'no_drinks',
+  'face_retouching_natural',
+  'shower',
+  'soap',
+  'content_cut',
+  'dry_cleaning',
+  'opacity',
+  /* Chores & shopping */
+  'local_laundry_service',
+  'countertops',
+  'cleaning_services',
+  'local_grocery_store',
+  'shopping_cart',
+  /* Health & supplements */
+  'biotech',
+  'medical_services',
+  'healing',
+  /* Smoke / nicotine */
+  'smoke_free',
+  'vape_free',
+  /* Running, fasting */
+  'directions_run',
+  'no_meals',
+  /* Discipline / commitment (e.g. semen retention, sobriety adjacent) */
+  'shield_moon',
+  'verified_user',
 ];
