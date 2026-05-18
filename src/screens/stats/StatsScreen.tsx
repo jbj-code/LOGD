@@ -51,7 +51,8 @@ export const StatsScreen = ({ logs }: StatsScreenProps) => {
         <h1 className="stats-screen__title">Stats</h1>
       </header>
 
-      <div className="screen-page__scroll stats-screen__body">
+      <div className="screen-page__scroll">
+        <div className="stats-screen__body">
         {/* Consistency card */}
         <div className="stats-card">
           <div className="stats-card__meta">
@@ -76,6 +77,7 @@ export const StatsScreen = ({ logs }: StatsScreenProps) => {
           {logs.map((log) => (
             <LogStatRow key={log.id} log={log} />
           ))}
+        </div>
         </div>
       </div>
     </div>

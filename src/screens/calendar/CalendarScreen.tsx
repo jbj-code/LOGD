@@ -70,7 +70,8 @@ export const CalendarScreen = ({ logs }: CalendarScreenProps) => {
         <h1 className="calendar-screen__title">Calendar</h1>
       </header>
 
-      <div className="screen-page__scroll calendar-screen__body">
+      <div className="screen-page__scroll">
+        <div className="calendar-screen__body">
         <div className="cal-nav">
           <button type="button" className="cal-nav__btn" onClick={prevMonth} aria-label="Previous month">
             <span className="material-symbols-rounded">chevron_left</span>
@@ -158,6 +159,7 @@ export const CalendarScreen = ({ logs }: CalendarScreenProps) => {
             )}
           </div>
         )}
+        </div>
       </div>
     </div>
   );

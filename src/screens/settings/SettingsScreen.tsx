@@ -21,7 +21,8 @@ export const SettingsScreen = ({
       <h1 className="settings-screen__title">Settings</h1>
     </header>
 
-    <div className="screen-page__scroll settings-screen__body">
+    <div className="screen-page__scroll">
+      <div className="settings-screen__body">
       <SettingsSection label="General">
         <SettingsRow
           icon="inventory_2"
@@ -39,6 +40,7 @@ export const SettingsScreen = ({
           onToggle={onToggleTheme}
         />
       </SettingsSection>
+      </div>
     </div>
   </div>
 );
