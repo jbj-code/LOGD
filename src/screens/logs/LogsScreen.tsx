@@ -18,21 +18,23 @@ export const LogsScreen = ({ logs, onLogSelect, onAddLog }: LogsScreenProps) => 
   const monthHeading = formatCalendarMonthHeading(new Date());
 
   return (
-    <div className="logs-screen">
-      <div className="logs-screen__header">
+    <div className="screen-page logs-screen">
+      <header className="screen-page__header logs-screen__header">
         <h1 className="logs-screen__title">Your Logs</h1>
         <span className="logs-screen__month">{monthHeading}</span>
-      </div>
+      </header>
 
-      {logs.length === 0 ? (
-        <EmptyState onAdd={onAddLog} />
-      ) : (
-        <div className="logs-screen__list">
-          {logs.map((log) => (
-            <LogCard key={log.id} log={log} onClick={() => onLogSelect(log.id)} />
-          ))}
-        </div>
-      )}
+      <div className="screen-page__scroll">
+        {logs.length === 0 ? (
+          <EmptyState onAdd={onAddLog} />
+        ) : (
+          <div className="logs-screen__list">
+            {logs.map((log) => (
+              <LogCard key={log.id} log={log} onClick={() => onLogSelect(log.id)} />
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 };

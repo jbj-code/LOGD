@@ -114,7 +114,7 @@ Defined in `tokens.css`: `--heat-square-gap`, `--heat-square-radius`, `--heat-ce
 | Stats / Settings / Add / Quick log | Settings: theme + archived entry point (count); add/quick flows as built |
 | Dark/light | Persisted **`LOGD-theme`** |
 | Supabase | Env-driven sync via **`useLogsStore`**; tables **`logs`** (incl. **`archived`**, **`notes`**) and **`log_entries`**; SQL **`supabase/schema.sql`** includes **`ALTER`** for adding **`notes`** on existing DBs |
-| PWA / shell | `manifest.webmanifest`; **`display: standalone`**; bottom nav flush on iOS home-screen app (see **iOS PWA shell**); main tab top padding **`calc(var(--safe-top) + var(--space-6))`** per screen CSS |
+| PWA / shell | `manifest.webmanifest`; **`display: standalone`**; bottom nav flush on iOS home-screen app (see **iOS PWA shell**); main tab headers in **`screen-page`** layout (header fixed, body scrolls) |
 | Icon picker | **`AVAILABLE_ICONS`** in `constants/icons.ts`; scroll grid in Add Log; new icons appended after originals |
 
 ---
@@ -136,6 +136,18 @@ The home-screen app bottom tab bar is **working and flush** with the physical bo
 **Do not:** reintroduce `black-translucent`, stack `height: 100%` on `html`/`body`, nest fixed nav inside `.app` without portal, or put safe-area padding only on the inner bar without outer background.
 
 Reference: [iOS PWA gotcha gist](https://gist.github.com/fozzedout/5e77925381991a9570151550992baf14).
+
+---
+
+## Main tab screen headers
+
+Tab screens (**Logs**, **Stats**, **Calendar**, **Settings**) use **`screen-page`** (`src/styles/screen-page.css`):
+
+- **`screen-page__header`** — stays **outside** the scroll area (does not move under the Dynamic Island when content scrolls or after closing Add Log).
+- **`screen-page__scroll`** — only this region scrolls.
+- Top inset: **`--screen-header-pad-top`** in `tokens.css` = `max(safe-area-inset-top, 2.75rem) + space-3` (~56px when env top is 0).
+
+`App.tsx` resets `.screen-page__scroll` scroll position when add/quick-log modals close (visualViewport quirk).
 
 ---
 

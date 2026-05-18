@@ -31,11 +31,11 @@
   flex-direction: column;
 }
 
+/* Tab screens scroll inside .screen-page__scroll; this slot only hosts the flex column. */
 .app-route--scroll {
-  overflow-y: auto;
-  overflow-x: hidden;
-  -webkit-overflow-scrolling: touch;
-  overscroll-behavior-y: contain;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 .app-route--detail {

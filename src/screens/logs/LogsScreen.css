@@ -1,11 +1,6 @@
 /* src/screens/logs/LogsScreen.css */
 
-.logs-screen {
-  flex: 1;
-  min-height: 0;
-  /* Safe area once here — avoid stacking safe-top on the header (was double on real devices). */
-  padding: calc(var(--safe-top) + var(--space-6)) var(--space-4) var(--space-4);
-}
+/* Top/side padding on .screen-page__header / __scroll — see screen-page.css */
 
 /* ── Header ─────────────────────────────────────────────────── */
 .logs-screen__header {
@@ -14,7 +9,7 @@
   justify-content: space-between;
   gap: var(--space-3);
   width: 100%;
-  margin-bottom: var(--space-6);
+  margin: 0;
 }
 
 .logs-screen__title {

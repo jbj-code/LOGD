@@ -16,12 +16,12 @@ export const SettingsScreen = ({
   onOpenArchived,
   archivedCount,
 }: SettingsScreenProps) => (
-  <div className="settings-screen">
-    <div className="settings-screen__header">
+  <div className="screen-page settings-screen">
+    <header className="screen-page__header settings-screen__header">
       <h1 className="settings-screen__title">Settings</h1>
-    </div>
+    </header>
 
-    <div className="settings-screen__body">
+    <div className="screen-page__scroll settings-screen__body">
       <SettingsSection label="General">
         <SettingsRow
           icon="inventory_2"

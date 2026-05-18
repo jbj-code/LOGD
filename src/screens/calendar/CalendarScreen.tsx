@@ -65,12 +65,12 @@ export const CalendarScreen = ({ logs }: CalendarScreenProps) => {
   const selectedLogs = selectedDay !== null ? getCompletedLogs(selectedDay) : [];
 
   return (
-    <div className="calendar-screen">
-      <div className="calendar-screen__header">
+    <div className="screen-page calendar-screen">
+      <header className="screen-page__header calendar-screen__header">
         <h1 className="calendar-screen__title">Calendar</h1>
-      </div>
+      </header>
 
-      <div className="calendar-screen__body">
+      <div className="screen-page__scroll calendar-screen__body">
         <div className="cal-nav">
           <button type="button" className="cal-nav__btn" onClick={prevMonth} aria-label="Previous month">
             <span className="material-symbols-rounded">chevron_left</span>

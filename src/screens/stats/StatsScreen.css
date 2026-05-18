@@ -1,11 +1,7 @@
 /* src/screens/stats/StatsScreen.css */
 
-.stats-screen {
-  padding: calc(var(--safe-top) + var(--space-6)) var(--space-4) var(--space-4);
-}
-
 .stats-screen__header {
-  margin-bottom: var(--space-6);
+  margin: 0;
 }
 
 .stats-screen__title {

@@ -13,13 +13,15 @@ interface StatsScreenProps {
 export const StatsScreen = ({ logs }: StatsScreenProps) => {
   if (logs.length === 0) {
     return (
-      <div className="stats-screen">
-        <div className="stats-screen__header">
+      <div className="screen-page stats-screen">
+        <header className="screen-page__header stats-screen__header">
           <h1 className="stats-screen__title">Stats</h1>
-        </div>
-        <div className="stats-empty">
-          <span className="material-symbols-rounded">bar_chart</span>
-          <p>Add some logs to see your stats here.</p>
+        </header>
+        <div className="screen-page__scroll">
+          <div className="stats-empty">
+            <span className="material-symbols-rounded">bar_chart</span>
+            <p>Add some logs to see your stats here.</p>
+          </div>
         </div>
       </div>
     );
@@ -44,12 +46,12 @@ export const StatsScreen = ({ logs }: StatsScreenProps) => {
     : [];
 
   return (
-    <div className="stats-screen">
-      <div className="stats-screen__header">
+    <div className="screen-page stats-screen">
+      <header className="screen-page__header stats-screen__header">
         <h1 className="stats-screen__title">Stats</h1>
-      </div>
+      </header>
 
-      <div className="stats-screen__body">
+      <div className="screen-page__scroll stats-screen__body">
         {/* Consistency card */}
         <div className="stats-card">
           <div className="stats-card__meta">

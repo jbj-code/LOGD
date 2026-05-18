@@ -1,7 +1,7 @@
 // src/App.tsx
 // Root component — manages navigation state and wires screens to data hooks.
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { usePwaViewportBottomBleed } from './hooks/use-pwa-viewport-bottom-bleed';
 import type { NavScreen, Tab } from './types';
@@ -45,6 +45,7 @@ const App = () => {
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [quickLogOpen, setQuickLogOpen] = useState(false);
   const [fabMenuOpen, setFabMenuOpen] = useState(false);
+  const mainScrollRef = useRef<HTMLDivElement>(null);
 
   const [splashMinElapsed, setSplashMinElapsed] = useState(false);
   const [splashHoldMs] = useState(() =>
@@ -63,6 +64,14 @@ const App = () => {
   useEffect(() => {
     queueMicrotask(() => setFabMenuOpen(false));
   }, [screen]);
+
+  /* Modal / keyboard can offset visualViewport scroll — reset inner scroll so headers stay put */
+  useEffect(() => {
+    if (addModalOpen || quickLogOpen) return;
+    const scroll = mainScrollRef.current?.querySelector('.screen-page__scroll');
+    if (scroll instanceof HTMLElement) scroll.scrollTop = 0;
+    window.scrollTo(0, 0);
+  }, [addModalOpen, quickLogOpen]);
 
   useEffect(() => {
     if (screen.tab !== 'logs' || screen.view !== 'detail') return;
@@ -183,7 +192,9 @@ const App = () => {
             />
           </div>
         ) : (
-          <div className="app-route app-route--scroll">{renderMain()}</div>
+          <div ref={mainScrollRef} className="app-route app-route--scroll">
+            {renderMain()}
+          </div>
         )}
       </main>
       <AddLogModal

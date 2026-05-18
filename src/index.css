@@ -1,4 +1,5 @@
 @import './styles/tokens.css';
+@import './styles/screen-page.css';
 
 /* src/index.css — Global resets, base styles. Tokens live in styles/tokens.css. */
 

@@ -119,6 +119,11 @@
   --safe-top:        env(safe-area-inset-top, 0px);
   /* iOS PWA layout gap under screen — updated by usePwaViewportBottomBleed */
   --pwa-bottom-extra: 0px;
+  /* Main tab headers — see screen-page.css (header is outside scroll; env top often 0 in standalone) */
+  --screen-inset-x: var(--space-4);
+  --screen-inset-bottom: var(--space-4);
+  --screen-header-pad-top: calc(max(env(safe-area-inset-top, 0px), 2.75rem) + var(--space-3));
+  --screen-header-pad-bottom: var(--space-4);
   /* Splash grid (boot animation) */
   --splash-logo-cell: 52px;
   --splash-logo-gap:  10px;

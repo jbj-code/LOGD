@@ -1,0 +1,27 @@
+/* src/styles/screen-page.css
+ * Main tab layout: header stays fixed below status bar; only __scroll moves (iOS PWA). */
+
+.screen-page {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--color-bg);
+}
+
+.screen-page__header {
+  flex-shrink: 0;
+  z-index: 2;
+  padding: var(--screen-header-pad-top) var(--screen-inset-x) var(--screen-header-pad-bottom);
+  background: var(--color-bg);
+}
+
+.screen-page__scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
+  padding: 0 var(--screen-inset-x) var(--screen-inset-bottom);
+}
