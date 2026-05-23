@@ -2,9 +2,11 @@
 
 ## What it is
 
-**LOGD** is a personal PWA habit tracker. Each **Log** is a repeatable activity marked on calendar dates (stretching daily, laundry weekly, bills on specific weekdays of the month). The user toggles completions; the app shows **heat-map-style** grids (with outlines on **planned** days when the rhythm isn’t daily), **streaks**, **consistency**, and a **month calendar** with per-day detail.
+**LOGD** is a personal PWA for logging repeatable activities and tracking them over time. Today the core loop is **habit tracking**: each **Log** is a named activity with an icon, color, and **schedule** (daily, fixed weekdays, or interval rules). The user marks completions on calendar dates; the app shows **heat-map grids**, **streaks**, **consistency**, and a **month calendar** with per-day detail.
 
-Built for **single-user** use today (no accounts). **`useLogsStore`** persists to **Supabase** when `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` are set; otherwise **localStorage** (`LOGD-logs`). Same boundary keeps swapping backends straightforward.
+**Direction:** LOGD is evolving into a broader “log stuff” app — not only habits on a cadence. **Goal tracking** is planned next: set a goal with a loose timeline or due date, then log progress toward it (likely daily entries), separate from rhythm-based habit logs. Habit tracking (daily + interval schedules) ships today; goals are a future feature.
+
+Built for **single-user** use (no accounts). **`useLogsStore`** persists to **Supabase** when `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` are set; otherwise **localStorage** (`LOGD-logs`).
 
 ---
 
@@ -31,16 +33,19 @@ Built for **single-user** use today (no accounts). **`useLogsStore`** persists t
 src/
   App.tsx / App.css       ← Shell: bottom nav, main slot, splash boot, logs FAB, modals, detail/archived slide-in routes
   main.tsx / index.css    ← Entry; global resets; `.visually-hidden`
-  lib/supabase.ts        ← Browser Supabase client (env-gated)
+  lib/supabase.ts         ← Browser Supabase client (env-gated)
   styles/
     tokens.css            ← Source of truth: colors, spacing, radii, typography, heat-map tokens
-    theme.ts              ← LOG_COLORS[] only (picker / logic hex values)
-  types/index.ts          ← Log, AppSettings, Tab, NavScreen
-  constants/icons.ts      ← Allowed Material Symbol names for log icons
+    theme.ts              ← LOG_COLORS[] only (picker / persisted log hex values; brand greens excluded)
+  types/index.ts          ← Log, LogSchedule, AppSettings, Tab, NavScreen
+  constants/
+    icons.ts              ← Allowed Material Symbol names for log icons
+    schedule.ts           ← Weekday order/labels, interval picker options, buildScheduleFromIntervalRules()
   utils/
-    date.ts               ← Dates, month grids, getWeeksForCalendarYear, month labels for detail heat map
-    heat-map.ts           ← formatCalendarMonthHeading ("March 2nd" logs header); formatMonthRangeForWeeks (legacy/helper)
-    schedule.ts           ← Repeat cadences (daily / strided weekly / monthly); due-day checks; legacy `biweekly` → `{ weekly, strideWeeks: 2 }`
+    date.ts               ← Dates, month grids, calendar-year week columns for detail heat map
+    heat-map.ts           ← Month headings for logs header / detail
+    schedule.ts           ← Cadences, due-day checks, streak/consistency helpers, formatScheduleSubtitle
+    schedule-preview.ts   ← Shared heat-map cell classes for add-log previews
     stats.ts              ← Streaks (per cadence), consistency, totals
     id.ts                 ← Client UUID helper
   hooks/
@@ -51,13 +56,15 @@ src/
     bottom-nav/           ← Tab row (fixed chrome is .app-bottom-shell in App.css — see iOS PWA shell below)
     fab-menu/             ← FAB + sheet (new log / quick log today)
     heat-map/             ← HeatMap: card (current month) vs detail (calendar year columns)
-    add-log-schedule-preview/ ← AddLogScheduleMonthPreview — month preview on add-log review step
+    add-log-schedule-preview/
+      AddLogScheduleMonthCarousel.tsx  ← Swipeable 12-month preview on add-log frequency step
+      AddLogScheduleYearPreview.tsx    ← 3×4 mini calendars on add-log review step
     modal/                ← Sheet mobile / centered desktop
     log-icon/             ← Colored tile + symbol
     splash/               ← Boot splash (shown while Supabase loads + minimum display time)
   screens/
     logs/                 ← LogsScreen (2-column cards), LogDetailScreen (year heat map + stats + notes)
-    add-log/              ← AddLogModal — step 1: repeat (weekdays + WK1–4 stride); step 2: review + month heat preview; Create Log
+    add-log/              ← AddLogModal — 3-step wizard (details → frequency → review)
     quick-log/            ← QuickLogModal
     stats/                ← StatsScreen (charts)
     calendar/             ← CalendarScreen (tap day → detail panel; auto-selects today in current month)
@@ -68,10 +75,13 @@ src/
 
 ```typescript
 type LogSchedule = {
-  cadence: 'daily' | 'weekly' | 'monthly';
-  weekdays: number[]; // Date#getDay(): Sun = 0 … Sat = 6 (ignored for plain daily)
-  strideWeeks?: number; // weekly only — every N Monday–Sunday bands from creation week (1 = each week); legacy JSON may have had `cadence: 'biweekly'`
-  monthlyOccurrences?: { ordinal: 1 | 2 | 3 | 4 | -1; weekday: number }[]; // monthly nth-weekday slots
+  cadence: 'daily' | 'weekly' | 'monthly' | 'interval';
+  weekdays: number[];              // Date#getDay(): Sun = 0 … Sat = 6
+  strideWeeks?: number;            // weekly — every N Mon–Sun bands from creation week (legacy biweekly → 2)
+  timesPerWeek?: number;           // flexible weekly quota (any N days in the week)
+  intervalDays?: number;         // every N calendar days from creation (legacy interval cadence)
+  monthlyOccurrences?: { ordinal: 1 | 2 | 3 | 4 | -1; weekday: number }[];
+  recurrenceRules?: RecurrenceRule[];  // interval picker — multiple weekly/monthly rows
 };
 
 interface Log {
@@ -83,7 +93,7 @@ interface Log {
   createdAt: string;
   archived: boolean;
   notes: string;
-  schedule: LogSchedule; // Persisted Supabase **`schedule_json`**; localStorage merges missing → daily
+  schedule: LogSchedule; // Supabase schedule_json; localStorage merges missing → daily
 }
 ```
 
@@ -104,12 +114,12 @@ type NavScreen =
 ### Theming
 
 - `data-theme="dark" | "light"` on `<html>` selects token sets in `tokens.css`.
-- **Rule:** Prefer CSS variables in `.css` files; `theme.ts` hex array is for the **color picker** and log persistence only.
+- **Rule:** Prefer CSS variables in `.css` files; `theme.ts` hex array is for the **color picker** and log persistence only. Brand greens are **not** in the picker (`LOG_COLORS`).
 - Meta `theme-color` follows computed **`--color-bg`** after theme apply (`use-theme.ts`).
 
 ### Heat maps (shared tokens)
 
-Defined in `tokens.css`: `--heat-square-gap`, `--heat-square-radius`, `--heat-cell-size`, **`--color-heat-scheduled-ring`** (planned check-in outlines). Card (logs list) and detail (log detail) use the **same** square tokens and pass **`schedule` + createdAt** so non-daily rhythms show a ring on due cells; **`SplashScreen`** tiles reuse **`--heat-square-radius`** / heat colors for a consistent look. Detail scrolls **week columns** for a **calendar year** (`getWeeksForCalendarYear`), optional **year `<select>`**, scroll starts at **January**. Month labels omit stray **Dec** before Jan 1 (`monthLabelForWeekColumnInDetailYear`).
+Defined in `tokens.css`: `--heat-square-gap`, `--heat-square-radius`, `--heat-cell-size`, **`--color-heat-scheduled-ring`**, **`--color-heat-past-empty`**. Card (logs list) and detail (log detail) use the same square tokens and pass **`schedule` + createdAt** so non-daily rhythms show a ring on due cells. Add-log previews reuse **`HeatMap.css`** card classes via **`schedulePreviewHeatCellClassName`**.
 
 ---
 
@@ -117,16 +127,23 @@ Defined in `tokens.css`: `--heat-square-gap`, `--heat-square-radius`, `--heat-ce
 
 | Done | Notes |
 |------|--------|
-| Logs list | Two-column grid (collapses on narrow widths); card `<button>`; month beside “Your Logs”; mini heat map with **planned-day ring** when repeat isn’t daily; streak wording **check-ins** vs **days** |
-| Log detail | Full-year scrollable heat map (**rings** match plan); **`formatScheduleSubtitle`** under title when not daily; stats use **scheduled** streak/longest/consistency semantics; notes + ⋮ Archive/Delete unchanged |
-| Add log | **Step 1:** icon, name, color, **Repeat** — weekday strip (M–S) + **WK 1–4** stride rectangles → **Next**. **Step 2:** summary + **6×7** current-month preview (due days filled with log color) → **Create Log**. Persists `daily`, or `weekly` + `weekdays` + optional `strideWeeks`. Legacy **`biweekly`** / **`monthly`** still load from storage |
-| Archived logs | Same screen as before; **`schedule_json`** on each row — restore preserves rhythm |
-| Calendar | Month grid; **today auto-selected** when viewing current month; **green pill** = selected day; tap toggles selection; **detail panel** lists logs + swatches; **no** separate legend card |
-| Stats / Settings / Add / Quick log | Settings: theme + archived entry point (count); add/quick flows as built |
+| Logs list | Two-column grid; card `<button>`; month beside “Your Logs”; mini heat map with **planned-day ring** when repeat isn’t daily; streak wording **check-ins** vs **days** |
+| Log detail | Full-year scrollable heat map; **`formatScheduleSubtitle`** under title; stats use scheduled streak/longest/consistency; notes + ⋮ Archive/Delete |
+| **Add log (3-step wizard)** | **Step 1:** icon, name, color (swipe strip; green selection ring; no brand greens in palette) → **Next**. **Step 2 — Frequency:** tabs **Daily / Weekly / Interval** + swipeable **month carousel** (same heat-map layout as list; dot indicators; scrolls to current month on tab change). **Weekly:** Mon–Sun pills (can deselect all; Next disabled until ≥1 day). **Interval:** inline dropdowns (every week / other week / 3–4 weeks / month + weekday); multiple rules; duplicates blocked; “Add another” when combos remain. **Step 3 — Review:** summary + **3×4 mini year grid** (12 month calendars) → **Create Log**. Footer sticky; back arrow steps 2–3 |
+| Schedule engine | **`utils/schedule.ts`** + **`constants/schedule.ts`**; legacy **`biweekly`**, **`monthly`**, **`intervalDays`** still load; interval UI writes **`recurrenceRules`** |
+| Archived logs | Restore preserves **`schedule_json`** |
+| Calendar | Month grid; **today auto-selected** in current month; green pill = selected day; detail panel lists logs + swatches |
+| Stats / Settings / Quick log | As built |
 | Dark/light | Persisted **`LOGD-theme`** |
-| Supabase | Env-driven sync via **`useLogsStore`**; tables **`logs`** (incl. **`archived`**, **`notes`**, **`schedule_json`**) and **`log_entries`**; SQL **`supabase/schema.sql`** includes **`ALTER`** for **`notes`** and **`schedule_json`** on older DBs |
-| PWA / shell | `manifest.webmanifest`; **`display: standalone`**; bottom nav flush on iOS home-screen app (see **iOS PWA shell**); main tab headers in **`screen-page`** layout (header fixed, body scrolls) |
-| Icon picker | **`AVAILABLE_ICONS`** in `constants/icons.ts`; scroll grid in Add Log; new icons appended after originals |
+| Supabase | Env-driven sync; **`logs`** (`archived`, `notes`, **`schedule_json`**) + **`log_entries`**; **`supabase/schema.sql`** |
+| PWA / shell | `manifest.webmanifest`; **`display: standalone`**; iOS bottom nav flush (see below) |
+| Icon picker | **`AVAILABLE_ICONS`**; scroll grid in Add Log |
+
+### Planned (not built)
+
+| Feature | Intent |
+|---------|--------|
+| **Goal tracking** | Goals with a loose timeline or due date; log progress toward them (likely daily), distinct from cadence-based habit logs. Extends LOGD beyond “did I do the thing on schedule?” toward “am I making progress on something?” |
 
 ---
 
@@ -201,6 +218,8 @@ Paste **`supabase/schema.sql`** into the Supabase **SQL Editor** and click **Run
 10. **Guidelines:** Root **`GUIDELINES.md`**; **`.env.example`** documents `VITE_*` vars (no real secrets in git).
 11. **iOS PWA bottom nav:** See **iOS PWA shell** above — avoid drive-by “fixes” to `index.html` status bar, root `height`, or `.app-bottom-shell`.
 12. **PWA updates:** Delete home-screen icon → open live **`https://USER.github.io/REPO/`** in Safari → refresh → confirm in Safari → Add to Home Screen. New icons in picker are **below** the original set (scroll). Installed PWA cache is separate from Safari private tab.
+13. **Add-log preview anchor:** `previewCreatedAtIso` is captured when leaving step 1 so stride/week bands match post-create behavior.
+14. **Weekly pills at zero days:** Preview shows no accent fills; **Next** stays disabled until at least one weekday is selected.
 
 - **CONTEXT.md** — update after meaningful features (this file).
 - **Commits** — Conventional Commits (`feat`, `fix`, …) per `GUIDELINES.md`.

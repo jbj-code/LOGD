@@ -4,6 +4,7 @@
 import { useMemo, type CSSProperties } from 'react';
 import type { LogSchedule } from '../../types';
 import { getMonthCalendarGrid, toDateString, today } from '../../utils/date';
+import { schedulePreviewHeatCellClassName } from '../../utils/schedule-preview';
 import { isDueDateStr, normalizeSchedule } from '../../utils/schedule';
 import '../../components/heat-map/HeatMap.css';
 import './AddLogScheduleYearPreview.css';
@@ -60,21 +61,11 @@ export const AddLogScheduleYearPreview = ({
                       }
                       const dateStr = toDateString(date);
                       const due = isDueDateStr(normalized, previewCreatedAtIso, dateStr);
-                      const isPast = dateStr < todayStr;
-                      const showFill = due && !isPast;
 
                       return (
                         <div
                           key={di}
-                          className={[
-                            'heat-map-card__cell',
-                            showFill ? 'heat-map-card__cell--active' : '',
-                            !showFill && isPast ? 'heat-map-card__cell--past' : '',
-                            !showFill && !isPast ? 'heat-map-card__cell--empty' : '',
-                            due && !showFill ? 'heat-map-card__cell--scheduled-due' : '',
-                          ]
-                            .filter(Boolean)
-                            .join(' ')}
+                          className={schedulePreviewHeatCellClassName(dateStr, todayStr, due)}
                           aria-hidden
                         />
                       );

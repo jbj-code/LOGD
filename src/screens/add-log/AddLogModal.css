@@ -346,6 +346,10 @@
     color var(--transition-fast);
 }
 
+.add-log-freq__pill--on {
+  color: var(--color-text-on-vivid-fill);
+}
+
 .add-log-freq__pill:active {
   transform: scale(0.97);
 }

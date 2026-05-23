@@ -387,7 +387,6 @@ export const AddLogModal = ({ isOpen, onClose, onAdd }: AddLogModalProps) => {
                               ? {
                                   backgroundColor: color,
                                   borderColor: color,
-                                  color: '#ffffff',
                                 }
                               : undefined
                           }
