@@ -3,8 +3,6 @@
 
 /** Brighter accent palette for log color picker (muted / dull hexes removed). */
 export const LOG_COLORS = [
-  '#22c55e',
-  '#4ade80',
   '#2dd4bf',
   '#14b8a6',
   '#06b6d4',

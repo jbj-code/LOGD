@@ -114,11 +114,28 @@ export const getMonthCalendarGrid = (year: number, monthIndex: number): (Date | 
   return rows;
 };
 
-/** Current local month grid — updates when the device calendar month changes. */
+/** Current local month grid (Mon–Sun rows) — updates when the device calendar month changes. */
 export const getCurrentMonthGrid = (): (Date | null)[][] => {
   const n = new Date();
   return getMonthCalendarGrid(n.getFullYear(), n.getMonth());
 };
+
+/** Six rows × seven columns, Sunday-first (column 0 = Sunday), padded with nulls to 42 cells. */
+export function getSunStartMonthGridSixRows(year: number, monthIndex: number): (Date | null)[][] {
+  const lastDay = new Date(year, monthIndex + 1, 0).getDate();
+  const startDow = new Date(year, monthIndex, 1).getDay();
+  const cells: (Date | null)[] = [];
+  for (let i = 0; i < startDow; i++) cells.push(null);
+  for (let d = 1; d <= lastDay; d++) {
+    cells.push(new Date(year, monthIndex, d));
+  }
+  while (cells.length < 42) cells.push(null);
+  const rows: (Date | null)[][] = [];
+  for (let i = 0; i < 42; i += 7) {
+    rows.push(cells.slice(i, i + 7));
+  }
+  return rows;
+}
 
 /** Monday 00:00:00 local time for the ISO-style week containing `date`. */
 export const startOfWeekMonday = (date: Date): Date => {

@@ -1,0 +1,86 @@
+/* src/components/add-log-schedule-preview/AddLogScheduleMonthPreview.css */
+
+.add-log-schedule-preview {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  width: 100%;
+}
+
+.add-log-schedule-preview__month {
+  margin: 0;
+  font-size: var(--text-base);
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  text-align: center;
+}
+
+.add-log-schedule-preview__card {
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  border: 1.5px solid var(--color-border);
+  padding: var(--space-3);
+  box-sizing: border-box;
+}
+
+.add-log-schedule-preview__grid {
+  display: grid;
+  grid-template-columns: 42px repeat(7, minmax(0, 1fr));
+  gap: 5px;
+  align-items: stretch;
+}
+
+.add-log-schedule-preview__corner {
+  min-height: 22px;
+}
+
+.add-log-schedule-preview__dow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--color-text-tertiary);
+  min-height: 22px;
+  user-select: none;
+}
+
+.add-log-schedule-preview__wk {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--color-text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  user-select: none;
+}
+
+.add-log-schedule-preview__cell {
+  box-sizing: border-box;
+  min-height: 36px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface-raised);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.add-log-schedule-preview__cell--empty {
+  border: none;
+  background: rgba(0, 0, 0, 0.12);
+  opacity: 0.35;
+  pointer-events: none;
+}
+
+.add-log-schedule-preview__day-num {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-text-tertiary);
+}
+
+.add-log-schedule-preview__cell--due .add-log-schedule-preview__day-num {
+  color: var(--color-text-on-accent-fill);
+}

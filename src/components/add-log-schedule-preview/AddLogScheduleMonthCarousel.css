@@ -1,0 +1,107 @@
+/* src/components/add-log-schedule-preview/AddLogScheduleMonthCarousel.css */
+
+.add-log-month-carousel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  width: 100%;
+}
+
+.add-log-month-carousel__meta {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1);
+  text-align: center;
+}
+
+.add-log-month-carousel__heading {
+  margin: 0;
+  font-size: var(--text-base);
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.add-log-month-carousel__stats {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.add-log-month-carousel__stats-sep {
+  color: var(--color-text-tertiary);
+}
+
+.add-log-month-carousel__track {
+  display: flex;
+  flex-direction: row;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-snap-type: x mandatory;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  touch-action: pan-x;
+  overscroll-behavior-x: contain;
+}
+
+.add-log-month-carousel__track::-webkit-scrollbar {
+  display: none;
+}
+
+.add-log-month-carousel__slide {
+  flex: 0 0 100%;
+  scroll-snap-align: center;
+  box-sizing: border-box;
+  display: flex;
+  justify-content: center;
+}
+
+.add-log-month-carousel__heat {
+  --heat-square-gap: 3px;
+  width: 100%;
+  max-width: 248px;
+}
+
+.add-log-month-carousel__heat .heat-map-card__cell--empty {
+  background: var(--color-heat-past-empty);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.05);
+}
+
+.add-log-month-carousel__dots {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  padding: var(--space-1) 0;
+}
+
+.add-log-month-carousel__dot {
+  width: 7px;
+  height: 7px;
+  padding: 0;
+  margin: 0;
+  border: none;
+  border-radius: var(--radius-full);
+  background: var(--color-border);
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: background var(--transition-fast), transform var(--transition-fast);
+}
+
+.add-log-month-carousel__dot--active {
+  background: var(--color-green);
+  transform: scale(1.15);
+}
+
+.add-log-month-carousel__dot:active {
+  transform: scale(0.95);
+}

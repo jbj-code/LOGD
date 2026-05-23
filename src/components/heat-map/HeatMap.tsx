@@ -2,6 +2,7 @@
 // Card = current month grid; detail = calendar year columns + optional year from parent.
 
 import { useLayoutEffect, useMemo, useRef, type CSSProperties } from 'react';
+import type { LogSchedule } from '../../types';
 import {
   getCurrentMonthGrid,
   getWeeksForCalendarYear,
@@ -9,6 +10,7 @@ import {
   toDateString,
   today,
 } from '../../utils/date';
+import { isDueDateStr, normalizeSchedule, scheduleIsNonDaily } from '../../utils/schedule';
 import './HeatMap.css';
 
 const DAY_LABELS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
@@ -22,6 +24,9 @@ interface HeatMapProps {
   /** Calendar year for detail variant (January → December columns). */
   detailYear?: number;
   onToggle?: (date: string) => void;
+  /** When rhythm is not daily, outlines expected check-ins on heat cells. */
+  schedule?: LogSchedule;
+  scheduleCreatedAt?: string;
 }
 
 interface DetailInnerProps {
@@ -32,6 +37,9 @@ interface DetailInnerProps {
   todayStr: string;
   now: Date;
   onToggle?: (date: string) => void;
+  showScheduledOutlines: boolean;
+  normalizedSchedule: LogSchedule;
+  scheduleCreatedAt: string;
 }
 
 const HeatMapDetailInner = ({
@@ -42,6 +50,9 @@ const HeatMapDetailInner = ({
   todayStr,
   now,
   onToggle,
+  showScheduledOutlines,
+  normalizedSchedule,
+  scheduleCreatedAt,
 }: DetailInnerProps) => {
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -77,6 +88,10 @@ const HeatMapDetailInner = ({
                   const isFuture = date > now;
                   const isTodayCell = dateStr === todayStr;
                   const inYear = date.getFullYear() === detailYear;
+                  const scheduledDue =
+                    showScheduledOutlines &&
+                    inYear &&
+                    isDueDateStr(normalizedSchedule, scheduleCreatedAt, dateStr);
 
                   return (
                     <button
@@ -89,13 +104,14 @@ const HeatMapDetailInner = ({
                         isFuture && inYear ? 'heat-map__cell--future' : '',
                         !inYear ? 'heat-map__cell--outside-year' : '',
                         isTodayCell ? 'heat-map__cell--today' : '',
+                        scheduledDue ? 'heat-map__cell--scheduled-due' : '',
                         onToggle && !isFuture && inYear ? 'heat-map__cell--interactive' : '',
                       ]
                         .filter(Boolean)
                         .join(' ')}
                       onClick={() => !isFuture && inYear && onToggle?.(dateStr)}
                       disabled={isFuture || !onToggle || !inYear}
-                      aria-label={`${dateStr}${completed ? ' — logged' : ''}`}
+                      aria-label={`${dateStr}${completed ? ' — logged' : ''}${scheduledDue ? ' — planned' : ''}`}
                       aria-pressed={completed}
                     />
                   );
@@ -111,10 +127,22 @@ const HeatMapDetailInner = ({
 
 const EMPTY_WEEKS: Date[][] = [];
 
-export const HeatMap = ({ entries, color, variant, detailYear: detailYearProp, onToggle }: HeatMapProps) => {
-  const todayStr = today();
+export const HeatMap = ({
+  entries,
+  color,
+  variant,
+  detailYear: detailYearProp,
+  onToggle,
+  schedule,
+  scheduleCreatedAt,
+}: HeatMapProps) => {
   const now = new Date();
   now.setHours(23, 59, 59, 999);
+
+  const normalizedSchedule = useMemo(() => normalizeSchedule(schedule ?? { cadence: 'daily' }), [schedule]);
+  const showScheduledOutlines =
+    typeof scheduleCreatedAt === 'string' && scheduleIsNonDaily(normalizedSchedule);
+  const createdStr = typeof scheduleCreatedAt === 'string' ? scheduleCreatedAt : '';
 
   const detailYear = detailYearProp ?? new Date().getFullYear();
   const weeks = useMemo(() => {
@@ -146,6 +174,10 @@ export const HeatMap = ({ entries, color, variant, detailYear: detailYearProp, o
                 const dateStr = toDateString(date);
                 const completed = !!entries[dateStr];
                 const isFuture = date > now;
+                const scheduledDue =
+                  showScheduledOutlines &&
+                  createdStr.length > 0 &&
+                  isDueDateStr(normalizedSchedule, createdStr, dateStr);
 
                 return (
                   <div
@@ -155,6 +187,7 @@ export const HeatMap = ({ entries, color, variant, detailYear: detailYearProp, o
                       completed ? 'heat-map-card__cell--active' : '',
                       !completed && !isFuture ? 'heat-map-card__cell--past' : '',
                       isFuture ? 'heat-map-card__cell--future' : '',
+                      scheduledDue ? 'heat-map-card__cell--scheduled-due' : '',
                     ]
                       .filter(Boolean)
                       .join(' ')}
@@ -175,9 +208,12 @@ export const HeatMap = ({ entries, color, variant, detailYear: detailYearProp, o
       detailYear={detailYear}
       entries={entries}
       color={color}
-      todayStr={todayStr}
+      todayStr={today()}
       now={now}
       onToggle={onToggle}
+      showScheduledOutlines={showScheduledOutlines}
+      normalizedSchedule={normalizedSchedule}
+      scheduleCreatedAt={createdStr}
     />
   );
 };

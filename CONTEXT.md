@@ -2,7 +2,7 @@
 
 ## What it is
 
-**LOGD** is a personal PWA habit tracker. Each **Log** is a yes/no daily activity (e.g. Gym, Stretching). The user marks completion per day; the app shows **heat-map-style** grids, **streaks**, **consistency**, and a **month calendar** with per-day detail.
+**LOGD** is a personal PWA habit tracker. Each **Log** is a repeatable activity marked on calendar dates (stretching daily, laundry weekly, bills on specific weekdays of the month). The user toggles completions; the app shows **heat-map-style** grids (with outlines on **planned** days when the rhythm isn’t daily), **streaks**, **consistency**, and a **month calendar** with per-day detail.
 
 Built for **single-user** use today (no accounts). **`useLogsStore`** persists to **Supabase** when `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` are set; otherwise **localStorage** (`LOGD-logs`). Same boundary keeps swapping backends straightforward.
 
@@ -40,7 +40,8 @@ src/
   utils/
     date.ts               ← Dates, month grids, getWeeksForCalendarYear, month labels for detail heat map
     heat-map.ts           ← formatCalendarMonthHeading ("March 2nd" logs header); formatMonthRangeForWeeks (legacy/helper)
-    stats.ts              ← Streaks, consistency, totals
+    schedule.ts           ← Repeat cadences (daily / strided weekly / monthly); due-day checks; legacy `biweekly` → `{ weekly, strideWeeks: 2 }`
+    stats.ts              ← Streaks (per cadence), consistency, totals
     id.ts                 ← Client UUID helper
   hooks/
     use-logs-store.ts     ← CRUD, archive, notes updates, toggle entry; Supabase or localStorage
@@ -50,12 +51,13 @@ src/
     bottom-nav/           ← Tab row (fixed chrome is .app-bottom-shell in App.css — see iOS PWA shell below)
     fab-menu/             ← FAB + sheet (new log / quick log today)
     heat-map/             ← HeatMap: card (current month) vs detail (calendar year columns)
+    add-log-schedule-preview/ ← AddLogScheduleMonthPreview — month preview on add-log review step
     modal/                ← Sheet mobile / centered desktop
     log-icon/             ← Colored tile + symbol
     splash/               ← Boot splash (shown while Supabase loads + minimum display time)
   screens/
     logs/                 ← LogsScreen (2-column cards), LogDetailScreen (year heat map + stats + notes)
-    add-log/              ← AddLogModal
+    add-log/              ← AddLogModal — step 1: repeat (weekdays + WK1–4 stride); step 2: review + month heat preview; Create Log
     quick-log/            ← QuickLogModal
     stats/                ← StatsScreen (charts)
     calendar/             ← CalendarScreen (tap day → detail panel; auto-selects today in current month)
@@ -65,15 +67,23 @@ src/
 ### Data model
 
 ```typescript
+type LogSchedule = {
+  cadence: 'daily' | 'weekly' | 'monthly';
+  weekdays: number[]; // Date#getDay(): Sun = 0 … Sat = 6 (ignored for plain daily)
+  strideWeeks?: number; // weekly only — every N Monday–Sunday bands from creation week (1 = each week); legacy JSON may have had `cadence: 'biweekly'`
+  monthlyOccurrences?: { ordinal: 1 | 2 | 3 | 4 | -1; weekday: number }[]; // monthly nth-weekday slots
+};
+
 interface Log {
   id: string;
   name: string;
-  icon: string;                       // Material Symbol name
-  color: string;                     // Hex (from LOG_COLORS or custom picker flow)
-  entries: Record<string, boolean>; // "YYYY-MM-DD" → true when logged
-  createdAt: string;                  // ISO
+  icon: string;
+  color: string;
+  entries: Record<string, boolean>;
+  createdAt: string;
   archived: boolean;
-  notes: string;                      // Detail-screen memo (persisted)
+  notes: string;
+  schedule: LogSchedule; // Persisted Supabase **`schedule_json`**; localStorage merges missing → daily
 }
 ```
 
@@ -99,7 +109,7 @@ type NavScreen =
 
 ### Heat maps (shared tokens)
 
-Defined in `tokens.css`: `--heat-square-gap`, `--heat-square-radius`, `--heat-cell-size`. Card (logs list) and detail (log detail) use the **same** visual tokens; **`SplashScreen`** tiles reuse **`--heat-square-radius`** / heat colors for a consistent look. Detail scrolls **week columns** for a **calendar year** (`getWeeksForCalendarYear`), optional **year `<select>`**, scroll starts at **January**. Month labels omit stray **Dec** before Jan 1 (`monthLabelForWeekColumnInDetailYear`).
+Defined in `tokens.css`: `--heat-square-gap`, `--heat-square-radius`, `--heat-cell-size`, **`--color-heat-scheduled-ring`** (planned check-in outlines). Card (logs list) and detail (log detail) use the **same** square tokens and pass **`schedule` + createdAt** so non-daily rhythms show a ring on due cells; **`SplashScreen`** tiles reuse **`--heat-square-radius`** / heat colors for a consistent look. Detail scrolls **week columns** for a **calendar year** (`getWeeksForCalendarYear`), optional **year `<select>`**, scroll starts at **January**. Month labels omit stray **Dec** before Jan 1 (`monthLabelForWeekColumnInDetailYear`).
 
 ---
 
@@ -107,13 +117,14 @@ Defined in `tokens.css`: `--heat-square-gap`, `--heat-square-radius`, `--heat-ce
 
 | Done | Notes |
 |------|--------|
-| Logs list | Two-column grid (collapses to one column on narrow viewports); full-card `<button>`; month beside “Your Logs” (`ordinalDayLabel` / `formatCalendarMonthHeading`); streak line between header and mini heat map |
-| Log detail | Calendar-year heat map, year picker when multiple years, stats pills; **notes** textarea (blur saves via **`updateLog`**); header **⋮** menu — **Archive** sets `archived: true` (hidden from main lists; stays in DB); **Delete** removes log row (entries cascade) |
-| Archived logs | From Settings → **Archived logs**: full-screen list of archived logs; **Restore** (`archiveLog(id, false)`) returns log to active lists; **Delete** confirms then **`deleteLog`** (Supabase + local state) |
+| Logs list | Two-column grid (collapses on narrow widths); card `<button>`; month beside “Your Logs”; mini heat map with **planned-day ring** when repeat isn’t daily; streak wording **check-ins** vs **days** |
+| Log detail | Full-year scrollable heat map (**rings** match plan); **`formatScheduleSubtitle`** under title when not daily; stats use **scheduled** streak/longest/consistency semantics; notes + ⋮ Archive/Delete unchanged |
+| Add log | **Step 1:** icon, name, color, **Repeat** — weekday strip (M–S) + **WK 1–4** stride rectangles → **Next**. **Step 2:** summary + **6×7** current-month preview (due days filled with log color) → **Create Log**. Persists `daily`, or `weekly` + `weekdays` + optional `strideWeeks`. Legacy **`biweekly`** / **`monthly`** still load from storage |
+| Archived logs | Same screen as before; **`schedule_json`** on each row — restore preserves rhythm |
 | Calendar | Month grid; **today auto-selected** when viewing current month; **green pill** = selected day; tap toggles selection; **detail panel** lists logs + swatches; **no** separate legend card |
 | Stats / Settings / Add / Quick log | Settings: theme + archived entry point (count); add/quick flows as built |
 | Dark/light | Persisted **`LOGD-theme`** |
-| Supabase | Env-driven sync via **`useLogsStore`**; tables **`logs`** (incl. **`archived`**, **`notes`**) and **`log_entries`**; SQL **`supabase/schema.sql`** includes **`ALTER`** for adding **`notes`** on existing DBs |
+| Supabase | Env-driven sync via **`useLogsStore`**; tables **`logs`** (incl. **`archived`**, **`notes`**, **`schedule_json`**) and **`log_entries`**; SQL **`supabase/schema.sql`** includes **`ALTER`** for **`notes`** and **`schedule_json`** on older DBs |
 | PWA / shell | `manifest.webmanifest`; **`display: standalone`**; bottom nav flush on iOS home-screen app (see **iOS PWA shell**); main tab headers in **`screen-page`** layout (header fixed, body scrolls) |
 | Icon picker | **`AVAILABLE_ICONS`** in `constants/icons.ts`; scroll grid in Add Log; new icons appended after originals |
 
@@ -172,7 +183,7 @@ $env:VITE_BASE="/YOUR_REPO/"; npm run build
 
 ### Supabase schema
 
-Paste **`supabase/schema.sql`** into the Supabase **SQL Editor** and click **Run** once (or run only the `grant` / `alter … disable row level security` lines if tables already exist). Grants **`anon`** so the browser client works without Auth today — tighten when adding **`user_id`** + policies. **`logs.notes`** defaults to `''`; use the file’s **`ADD COLUMN IF NOT EXISTS notes`** if you created **`logs`** before notes existed.
+Paste **`supabase/schema.sql`** into the Supabase **SQL Editor** and click **Run** once (or run only the `grant` / `alter … disable row level security` lines if tables already exist). Grants **`anon`** so the browser client works without Auth today — tighten when adding **`user_id`** + policies. **`logs.notes`** defaults to `''`; **`schedule_json`** defaults daily — use **`ADD COLUMN IF NOT EXISTS`** variants if you created **`logs`** before those columns existed.
 
 ---
 

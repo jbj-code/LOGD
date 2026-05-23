@@ -5,6 +5,7 @@ import type { Log } from '../../types';
 import { HeatMap } from '../../components/heat-map/HeatMap';
 import { LogIcon } from '../../components/log-icon/LogIcon';
 import { formatCalendarMonthHeading } from '../../utils/heat-map';
+import { normalizeSchedule, scheduleIsNonDaily } from '../../utils/schedule';
 import { getCurrentStreak, getTotalLogged } from '../../utils/stats';
 import './LogsScreen.css';
 
@@ -47,6 +48,8 @@ interface LogCardProps {
 const LogCard = ({ log, onClick }: LogCardProps) => {
   const streak = getCurrentStreak(log);
   const total = getTotalLogged(log);
+  const sched = normalizeSchedule(log.schedule);
+  const nonDaily = scheduleIsNonDaily(sched);
 
   return (
     <button type="button" className="log-card" onClick={onClick} aria-label={`Open ${log.name}`}>
@@ -64,11 +67,23 @@ const LogCard = ({ log, onClick }: LogCardProps) => {
       </div>
 
       <span className="log-card__subline" style={{ color: log.color }}>
-        {streak > 0 ? `${streak} day streak` : total > 0 ? `${total} total` : 'Start today'}
+        {streak > 0
+          ? `${streak} ${nonDaily ? 'check-in streak' : 'day streak'}`
+          : total > 0
+            ? `${total} ${nonDaily ? 'check-ins' : 'total'}`
+            : nonDaily
+              ? 'Log your next check-in'
+              : 'Start today'}
       </span>
 
       <div className="log-card__heatmap">
-        <HeatMap entries={log.entries} color={log.color} variant="card" />
+        <HeatMap
+          entries={log.entries}
+          color={log.color}
+          variant="card"
+          schedule={log.schedule}
+          scheduleCreatedAt={log.createdAt}
+        />
       </div>
     </button>
   );

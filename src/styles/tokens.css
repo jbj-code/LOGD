@@ -29,6 +29,8 @@
   --color-heat-active:      var(--color-green);
   --color-heat-inactive:    #1e1e21;
   --color-heat-past-empty:  #343438;
+  /* Expected check-in rings for non–every-day rhythms */
+  --color-heat-scheduled-ring: rgba(174, 174, 178, 0.75);
 
   /* Glyph on saturated accent fills (log icons on color tiles, FAB chips) */
   --color-text-on-accent-fill: #0f172a;
@@ -60,6 +62,7 @@
   --color-green-dim:        rgba(74, 222, 128, 0.15);
   --color-heat-inactive:    #e5e5ea;
   --color-heat-past-empty:  #d8d8dc;
+  --color-heat-scheduled-ring: rgba(60, 60, 67, 0.72);
   --color-nav-bg:           rgba(255, 255, 255, 0.88);
 
   --color-text-on-accent-fill: #ffffff;

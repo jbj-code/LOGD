@@ -10,6 +10,7 @@ create table if not exists public.logs (
   color text not null default '#4ade80',
   archived boolean not null default false,
   notes text not null default '',
+  schedule_json jsonb not null default '{"cadence":"daily","weekdays":[]}'::jsonb,
   created_at timestamptz not null default now()
 );
 
@@ -36,6 +37,9 @@ alter table public.log_entries disable row level security;
 
 -- Existing projects created before `notes`: add column (safe to re-run).
 alter table public.logs add column if not exists notes text not null default '';
+
+-- Rhythm / repeat cadence JSON (daily, weekly + optional stride, monthly).
+alter table public.logs add column if not exists schedule_json jsonb not null default '{"cadence":"daily","weekdays":[]}'::jsonb;
 
 -- Optional: helps if you add Supabase Realtime later
 -- alter publication supabase_realtime add table public.logs;

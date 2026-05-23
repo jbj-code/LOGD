@@ -3,6 +3,7 @@
 
 import type { Log } from '../../types';
 import { LogIcon } from '../../components/log-icon/LogIcon';
+import { normalizeSchedule, scheduleIsNonDaily } from '../../utils/schedule';
 import { getConsistency, getTotalLogged, getDailyTotals, getWeeklyConsistency } from '../../utils/stats';
 import './StatsScreen.css';
 
@@ -88,6 +89,7 @@ export const StatsScreen = ({ logs }: StatsScreenProps) => {
 const LogStatRow = ({ log }: { log: Log }) => {
   const consistency = getConsistency(log);
   const total = getTotalLogged(log);
+  const nonDaily = scheduleIsNonDaily(normalizeSchedule(log.schedule));
 
   return (
     <div className="log-stat-row">
@@ -96,7 +98,9 @@ const LogStatRow = ({ log }: { log: Log }) => {
       </div>
       <div className="log-stat-row__info">
         <span className="log-stat-row__name">{log.name}</span>
-        <span className="log-stat-row__count">{total} days logged</span>
+        <span className="log-stat-row__count">
+          {total} {nonDaily ? 'check-ins' : 'days logged'}
+        </span>
       </div>
       <div className="log-stat-row__bar-wrap">
         <div

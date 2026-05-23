@@ -5,6 +5,11 @@ import { useEffect, useMemo, useState } from 'react';
 import type { Log } from '../../types';
 import { HeatMap } from '../../components/heat-map/HeatMap';
 import { LogIcon } from '../../components/log-icon/LogIcon';
+import {
+  formatScheduleSubtitle,
+  normalizeSchedule,
+  scheduleIsNonDaily,
+} from '../../utils/schedule';
 import { getCurrentStreak, getLongestStreak, getTotalLogged, getConsistency } from '../../utils/stats';
 import { today } from '../../utils/date';
 import './LogDetailScreen.css';
@@ -53,6 +58,8 @@ export const LogDetailScreen = ({
     queueMicrotask(() => setDraftNotes(log.notes ?? ''));
   }, [log.id, log.notes]);
 
+  const schedNorm = normalizeSchedule(log.schedule);
+  const nonDaily = scheduleIsNonDaily(schedNorm);
   const streak = getCurrentStreak(log);
   const longest = getLongestStreak(log);
   const total = getTotalLogged(log);
@@ -115,8 +122,13 @@ export const LogDetailScreen = ({
           <LogIcon symbol={log.icon} color={log.color} size="md" />
           <div className="log-detail__identity-text">
             <h1 className="log-detail__name">{log.name}</h1>
+            {nonDaily && (
+              <p className="log-detail__schedule-caption">{formatScheduleSubtitle(schedNorm)}</p>
+            )}
             <p className="log-detail__streak-label" style={{ color: log.color }}>
-              {streak > 0 ? `${streak} day streak` : 'No current streak'}
+              {streak > 0
+                ? `${streak} ${nonDaily ? 'check-in streak' : 'day streak'}`
+                : 'No current streak'}
             </p>
           </div>
           <button
@@ -169,6 +181,8 @@ export const LogDetailScreen = ({
             variant="detail"
             detailYear={heatmapYear}
             onToggle={(date) => onToggleEntry(log.id, date)}
+            schedule={log.schedule}
+            scheduleCreatedAt={log.createdAt}
           />
         </div>
 
@@ -181,7 +195,9 @@ export const LogDetailScreen = ({
         <div className="log-detail__row">
           <span className="log-detail__row-label">Longest Streak</span>
           <span className="log-detail__row-value" style={{ color: log.color }}>
-            {longest} {longest === 1 ? 'day' : 'days'}
+            {nonDaily
+              ? `${longest} check-in${longest === 1 ? '' : 's'}`
+              : `${longest} ${longest === 1 ? 'day' : 'days'}`}
           </span>
         </div>
 
