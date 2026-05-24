@@ -108,6 +108,9 @@
   --heat-square-gap:     2px;
   --heat-square-radius:  4px;
   --heat-cell-size:      12px;
+  /* Your Logs list cards — slightly smaller month grid */
+  --heat-list-card-gap:     3px;
+  --heat-list-card-radius:  3px;
 
   /* Floating action button */
   --fab-size:                 62px;

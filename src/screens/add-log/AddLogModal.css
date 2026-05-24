@@ -692,14 +692,13 @@
 /* Flex wrap — WebKit PWA handles row/column gap more reliably here than CSS grid for dense tiles. */
 .icon-picker__grid {
   --ip-cols: 4;
-  --ip-col-gap: var(--space-2);
-  --ip-row-gap: var(--space-6);
+  --ip-gap: var(--space-2);
   display: flex;
   flex-wrap: wrap;
   align-content: flex-start;
   justify-content: flex-start;
-  column-gap: var(--ip-col-gap);
-  row-gap: var(--ip-row-gap);
+  column-gap: var(--ip-gap);
+  row-gap: var(--ip-gap);
   flex: 1 1 auto;
   min-height: 0;
   overflow-y: auto;
@@ -710,8 +709,9 @@
 
 .icon-picker__btn {
   box-sizing: border-box;
-  flex: 0 0 calc((100% - (var(--ip-cols) - 1) * var(--ip-col-gap)) / var(--ip-cols));
-  max-width: calc((100% - (var(--ip-cols) - 1) * var(--ip-col-gap)) / var(--ip-cols));
+  container-type: inline-size;
+  flex: 0 0 calc((100% - (var(--ip-cols) - 1) * var(--ip-gap)) / var(--ip-cols));
+  max-width: calc((100% - (var(--ip-cols) - 1) * var(--ip-gap)) / var(--ip-cols));
   aspect-ratio: 1;
   min-width: 0;
   min-height: 0;
@@ -722,10 +722,10 @@
   display: flex;
   align-items: stretch;
   justify-content: stretch;
-  overflow: visible;
+  overflow: hidden;
   transition: transform var(--transition-fast), border-color var(--transition-fast);
   /* Tiny inset so the colored tile sits just inside the selection ring */
-  padding: 3px;
+  padding: 2px;
   touch-action: manipulation;
 }
 
@@ -734,11 +734,15 @@
   height: 100%;
 }
 
+.icon-picker__btn .log-icon.log-icon--grid .material-symbols-rounded {
+  font-size: 58cqi;
+}
+
 .icon-picker__btn .log-icon {
   flex: 1;
   min-height: 0;
   min-width: 0;
-  border-radius: calc(var(--radius-md) - 3px);
+  border-radius: calc(var(--radius-md) - 2px);
 }
 
 .icon-picker__btn:active {

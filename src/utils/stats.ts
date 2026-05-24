@@ -140,9 +140,11 @@ export const getLongestStreak = (log: Log): number => {
   return longest;
 };
 
-/** Total number of logged days / check-ins. */
-export const getTotalLogged = (log: Log): number =>
-  Object.values(log.entries).filter(Boolean).length;
+/** Total number of logged days / check-ins. Uses server total when entries are partial. */
+export const getTotalLogged = (log: Log): number => {
+  if (typeof log.totalEntries === 'number') return log.totalEntries;
+  return Object.values(log.entries).filter(Boolean).length;
+};
 
 /**
  * Completed expected slots divided by slots since creation (through today).

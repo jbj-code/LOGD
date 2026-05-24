@@ -12,6 +12,23 @@ export const toDateString = (date: Date): string => {
 /** Returns today's date as "YYYY-MM-DD". */
 export const today = (): string => toDateString(new Date());
 
+/** Returns the date string `days` before today (local calendar). */
+export const daysAgoDateString = (days: number): string => {
+  const d = new Date();
+  d.setHours(12, 0, 0, 0);
+  d.setDate(d.getDate() - days);
+  return toDateString(d);
+};
+
+/** Inclusive calendar-month bounds as YYYY-MM-DD strings. */
+export const monthDateRange = (
+  year: number,
+  monthIndex: number,
+): { start: string; end: string } => ({
+  start: toDateString(new Date(year, monthIndex, 1)),
+  end: toDateString(new Date(year, monthIndex + 1, 0)),
+});
+
 /**
  * Returns an array of weeks (oldest first), each week being 7 Date objects
  * starting on Monday. The last week is the current week.

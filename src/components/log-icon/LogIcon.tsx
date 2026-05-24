@@ -2,6 +2,7 @@
 // Shared log symbol tile: solid accent background + on-accent glyph (same treatment app-wide).
 
 import './LogIcon.css';
+import { resolveIconSymbol } from '../../constants/icons';
 
 export type LogIconSize = 'sm' | 'md' | 'lg' | 'grid';
 
@@ -28,7 +29,7 @@ export const LogIcon = ({
 
   return (
     <div className={cls} style={{ backgroundColor: color }} aria-hidden>
-      <span className="material-symbols-rounded">{symbol}</span>
+      <span className="material-symbols-rounded">{resolveIconSymbol(symbol)}</span>
     </div>
   );
 };

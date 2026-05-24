@@ -19,7 +19,7 @@ Built for **single-user** use (no accounts). **`useLogsStore`** persists to **Su
 | Styling | Plain CSS + **`src/styles/tokens.css`** (CSS custom properties for dark/light) |
 | Icons | Google Material Symbols Rounded (CDN in `index.html`) |
 | Font | System stack (`tokens.css` `--font-family`) |
-| Data | **`useLogsStore`** → Supabase tables `logs` / `log_entries` if env set; else localStorage **`LOGD-logs`** |
+| Data | **`useLogsStore`** → Supabase (tiered sync + IndexedDB cache) or localStorage **`LOGD-logs`** |
 | Backend | **Supabase** (`@supabase/supabase-js`); schema SQL in **`supabase/schema.sql`** |
 | Routing | **No router** — `NavScreen` state + callbacks in `App.tsx` |
 
@@ -49,7 +49,10 @@ src/
     stats.ts              ← Streaks (per cadence), consistency, totals
     id.ts                 ← Client UUID helper
   hooks/
-    use-logs-store.ts     ← CRUD, archive, notes updates, toggle entry; Supabase or localStorage
+    use-logs-store.ts     ← CRUD, tiered Supabase sync, IndexedDB cache, on-demand entry loads
+    services/
+      logs-remote.ts      ← Supabase reads (initial 90d window, backfill, per-log/month)
+      log-entries-cache.ts ← IndexedDB snapshot for instant repeat loads
     use-theme.ts          ← data-theme on <html>, meta theme-color from computed --color-bg
     use-pwa-viewport-bottom-bleed.ts ← Standalone only: zeros --pwa-bottom-extra (Safari-only gap math)
   components/
@@ -127,7 +130,7 @@ Defined in `tokens.css`: `--heat-square-gap`, `--heat-square-radius`, `--heat-ce
 
 | Done | Notes |
 |------|--------|
-| Logs list | Two-column grid; card `<button>`; month beside “Your Logs”; mini heat map with **planned-day ring** when repeat isn’t daily; streak wording **check-ins** vs **days** |
+| Logs list | Two-column grid; **long-press to reorder** (Done pill saves); card `<button>`; month beside “Your Logs”; mini heat map with **planned-day ring** when repeat isn’t daily; streak number top-right |
 | Log detail | Full-year scrollable heat map; **`formatScheduleSubtitle`** under title; stats use scheduled streak/longest/consistency; notes + ⋮ Archive/Delete |
 | **Add log (3-step wizard)** | **Step 1:** icon, name, color (swipe strip; green selection ring; no brand greens in palette) → **Next**. **Step 2 — Frequency:** tabs **Daily / Weekly / Interval** + swipeable **month carousel** (same heat-map layout as list; dot indicators; scrolls to current month on tab change). **Weekly:** Mon–Sun pills (can deselect all; Next disabled until ≥1 day). **Interval:** inline dropdowns (every week / other week / 3–4 weeks / month + weekday); multiple rules; duplicates blocked; “Add another” when combos remain. **Step 3 — Review:** summary + **3×4 mini year grid** (12 month calendars) → **Create Log**. Footer sticky; back arrow steps 2–3 |
 | Schedule engine | **`utils/schedule.ts`** + **`constants/schedule.ts`**; legacy **`biweekly`**, **`monthly`**, **`intervalDays`** still load; interval UI writes **`recurrenceRules`** |
@@ -135,7 +138,7 @@ Defined in `tokens.css`: `--heat-square-gap`, `--heat-square-radius`, `--heat-ce
 | Calendar | Month grid; **today auto-selected** in current month; green pill = selected day; detail panel lists logs + swatches |
 | Stats / Settings / Quick log | As built |
 | Dark/light | Persisted **`LOGD-theme`** |
-| Supabase | Env-driven sync; **`logs`** (`archived`, `notes`, **`schedule_json`**) + **`log_entries`**; **`supabase/schema.sql`** |
+| Supabase | Tiered sync: boot = logs + last **90 days** of entries + **`log_entry_totals`** view; background backfill for older rows; IndexedDB cache for instant repeat loads; detail/stats/archived await full history; calendar fetches viewed month on demand. Schema: **`supabase/schema.sql`** |
 | PWA / shell | `manifest.webmanifest`; **`display: standalone`**; iOS bottom nav flush (see below) |
 | Icon picker | **`AVAILABLE_ICONS`**; scroll grid in Add Log |
 
@@ -200,7 +203,7 @@ $env:VITE_BASE="/YOUR_REPO/"; npm run build
 
 ### Supabase schema
 
-Paste **`supabase/schema.sql`** into the Supabase **SQL Editor** and click **Run** once (or run only the `grant` / `alter … disable row level security` lines if tables already exist). Grants **`anon`** so the browser client works without Auth today — tighten when adding **`user_id`** + policies. **`logs.notes`** defaults to `''`; **`schedule_json`** defaults daily — use **`ADD COLUMN IF NOT EXISTS`** variants if you created **`logs`** before those columns existed.
+Paste **`supabase/schema.sql`** into the Supabase **SQL Editor** and click **Run** once (or run only new sections if tables already exist). Includes **`log_entry_totals`** view and **`sort_order`** for custom log ordering. Grants **`anon`** so the browser client works without Auth today — tighten when adding **`user_id`** + policies.
 
 ---
 

@@ -10,7 +10,7 @@
 .quick-log__scroll {
   flex: 1 1 auto;
   min-height: 0;
-  max-height: min(52dvh, 380px);
+  max-height: min(64dvh, 480px);
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   padding-bottom: var(--space-4);

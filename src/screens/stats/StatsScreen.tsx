@@ -96,19 +96,23 @@ const LogStatRow = ({ log }: { log: Log }) => {
       <div className="log-stat-row__lead">
         <LogIcon symbol={log.icon} color={log.color} size="sm" />
       </div>
-      <div className="log-stat-row__info">
-        <span className="log-stat-row__name">{log.name}</span>
-        <span className="log-stat-row__count">
-          {total} {nonDaily ? 'check-ins' : 'days logged'}
-        </span>
+      <div className="log-stat-row__body">
+        <div className="log-stat-row__head">
+          <span className="log-stat-row__name">{log.name}</span>
+          <span className="log-stat-row__count">
+            {total} {nonDaily ? 'check-ins' : 'days logged'}
+          </span>
+        </div>
+        <div className="log-stat-row__track">
+          <div className="log-stat-row__bar-wrap">
+            <div
+              className="log-stat-row__bar"
+              style={{ width: `${consistency}%`, backgroundColor: log.color }}
+            />
+          </div>
+          <span className="log-stat-row__pct" style={{ color: log.color }}>{consistency}%</span>
+        </div>
       </div>
-      <div className="log-stat-row__bar-wrap">
-        <div
-          className="log-stat-row__bar"
-          style={{ width: `${consistency}%`, backgroundColor: log.color }}
-        />
-      </div>
-      <span className="log-stat-row__pct" style={{ color: log.color }}>{consistency}%</span>
     </div>
   );
 };

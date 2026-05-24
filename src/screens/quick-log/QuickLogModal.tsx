@@ -23,7 +23,12 @@ export const QuickLogModal = ({
   const todayStr = today();
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Log today" sheetClassName="modal-sheet--stacked">
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Log today"
+      sheetClassName="modal-sheet--stacked modal-sheet--quick-log"
+    >
       <div className="quick-log quick-log--stacked">
         <div className="quick-log__scroll">
           {logs.length === 0 ? (

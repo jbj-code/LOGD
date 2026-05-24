@@ -1,65 +1,29 @@
 // src/hooks/use-logs-store.ts
-// Logs persistence: Supabase when env is set, otherwise localStorage.
+// Logs persistence: Supabase (tiered sync + IndexedDB cache) or localStorage.
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import type { Log, LogSchedule } from '../types';
 import { normalizeSchedule } from '../utils/schedule';
 import { getSupabaseClient, isSupabaseConfigured } from '../lib/supabase';
 import { createClientUuid } from '../utils/id';
+import { monthDateRange } from '../utils/date';
+import {
+  buildLogsFromRows,
+  mergeEntryRowsIntoLogs,
+  patchLogEntry,
+  type DbLogRow,
+} from '../utils/log-entries';
+import {
+  fetchEntryRowsBefore,
+  fetchEntryRowsForLog,
+  fetchEntryRowsForRange,
+  fetchInitialRemotePayload,
+  type EntriesLoadPhase,
+} from '../services/logs-remote';
+import { clearLogsCache, readLogsCache, writeLogsCache } from '../services/log-entries-cache';
+import { nextSortOrder, sortLogsByOrder, withDefaultSortOrders } from '../utils/log-sort';
 
 const STORAGE_KEY = 'LOGD-logs';
-
-interface DbLogRow {
-  id: string;
-  name: string;
-  icon: string;
-  color: string;
-  archived: boolean;
-  created_at: string;
-  notes?: string | null;
-  schedule_json?: unknown | null;
-}
-
-interface DbEntryRow {
-  log_id: string;
-  logged_date: string;
-}
-
-const normalizeDate = (value: string) => value.slice(0, 10);
-
-const mergeLogs = (logRows: DbLogRow[], entryRows: DbEntryRow[]): Log[] => {
-  const entriesByLog = new Map<string, Record<string, boolean>>();
-  for (const row of entryRows) {
-    const date = normalizeDate(row.logged_date);
-    const prev = entriesByLog.get(row.log_id) ?? {};
-    entriesByLog.set(row.log_id, { ...prev, [date]: true });
-  }
-  return logRows.map((row) => ({
-    id: row.id,
-    name: row.name,
-    icon: row.icon,
-    color: row.color,
-    archived: row.archived,
-    createdAt: row.created_at,
-    notes: row.notes ?? '',
-    schedule: normalizeSchedule(row.schedule_json),
-    entries: entriesByLog.get(row.id) ?? {},
-  }));
-};
-
-const fetchRemoteLogs = async (): Promise<Log[]> => {
-  const sb = getSupabaseClient();
-  const [logsRes, entriesRes] = await Promise.all([
-    sb.from('logs').select('*').order('created_at', { ascending: true }),
-    sb.from('log_entries').select('log_id, logged_date'),
-  ]);
-  if (logsRes.error) throw logsRes.error;
-  if (entriesRes.error) throw entriesRes.error;
-  return mergeLogs(
-    (logsRes.data ?? []) as DbLogRow[],
-    (entriesRes.data ?? []) as DbEntryRow[],
-  );
-};
 
 const loadFromStorage = (): Log[] => {
   try {
@@ -76,6 +40,8 @@ const loadFromStorage = (): Log[] => {
   }
 };
 
+const normalizeLoadedLogs = (logs: Log[]): Log[] => withDefaultSortOrders(logs);
+
 const saveToStorage = (logs: Log[]) => {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(logs));
@@ -87,39 +53,164 @@ const saveToStorage = (logs: Log[]) => {
 export const useLogsStore = () => {
   const usesSupabase = isSupabaseConfigured();
 
-  const [logs, setLogs] = useState<Log[]>(() => (usesSupabase ? [] : loadFromStorage()));
+  const [logs, setLogs] = useState<Log[]>(() =>
+    usesSupabase ? [] : normalizeLoadedLogs(loadFromStorage()),
+  );
   const [logsLoading, setLogsLoading] = useState(usesSupabase);
   const [logsError, setLogsError] = useState<string | null>(null);
+  const [entriesLoadPhase, setEntriesLoadPhase] = useState<EntriesLoadPhase>(
+    usesSupabase ? 'none' : 'full',
+  );
 
-  const refetchLogs = useCallback(async () => {
+  const entriesLoadPhaseRef = useRef<EntriesLoadPhase>(usesSupabase ? 'none' : 'full');
+  const backfillPromiseRef = useRef<Promise<void> | null>(null);
+  const fullLogIdsRef = useRef<Set<string>>(new Set());
+  const loadedMonthsRef = useRef<Set<string>>(new Set());
+  const syncGenerationRef = useRef(0);
+
+  const persistCache = useCallback(
+    (nextLogs: Log[]) => {
+      if (!usesSupabase) return;
+      void writeLogsCache(nextLogs);
+    },
+    [usesSupabase],
+  );
+
+  const runBackfill = useCallback(
+    (recentSince: string, generation: number) => {
+      if (backfillPromiseRef.current) return backfillPromiseRef.current;
+
+      backfillPromiseRef.current = (async () => {
+        try {
+          const olderRows = await fetchEntryRowsBefore(recentSince);
+          if (syncGenerationRef.current !== generation) return;
+
+          setLogs((prev) => {
+            const merged = mergeEntryRowsIntoLogs(prev, olderRows);
+            persistCache(merged);
+            return merged;
+          });
+          entriesLoadPhaseRef.current = 'full';
+          setEntriesLoadPhase('full');
+        } catch (err) {
+          console.error('[useLogsStore] Entry backfill failed', err);
+        } finally {
+          backfillPromiseRef.current = null;
+        }
+      })();
+
+      return backfillPromiseRef.current;
+    },
+    [persistCache],
+  );
+
+  const syncFromRemote = useCallback(async () => {
     if (!usesSupabase) return;
+
+    const generation = ++syncGenerationRef.current;
+    fullLogIdsRef.current.clear();
+    loadedMonthsRef.current.clear();
+    backfillPromiseRef.current = null;
+    entriesLoadPhaseRef.current = 'none';
+    setEntriesLoadPhase('none');
     setLogsLoading(true);
     setLogsError(null);
-    try {
-      const data = await fetchRemoteLogs();
-      setLogs(data);
-    } catch (err) {
-      console.error('[useLogsStore] Fetch failed', err);
-      const msg = err instanceof Error ? err.message : 'Failed to load logs';
-      setLogsError(msg);
-    } finally {
+
+    const cached = await readLogsCache();
+    if (cached && cached.length > 0 && syncGenerationRef.current === generation) {
+      setLogs(normalizeLoadedLogs(cached));
       setLogsLoading(false);
     }
-  }, [usesSupabase]);
+
+    try {
+      const { logRows, recentEntries, entryTotals, recentSince } = await fetchInitialRemotePayload();
+      if (syncGenerationRef.current !== generation) return;
+
+      const built = normalizeLoadedLogs(buildLogsFromRows(logRows, recentEntries, entryTotals));
+      setLogs(built);
+      setLogsError(null);
+      setLogsLoading(false);
+      entriesLoadPhaseRef.current = 'recent';
+      setEntriesLoadPhase('recent');
+      persistCache(built);
+      void runBackfill(recentSince, generation);
+    } catch (err) {
+      if (syncGenerationRef.current !== generation) return;
+      console.error('[useLogsStore] Initial sync failed', err);
+      const msg = err instanceof Error ? err.message : 'Failed to load logs';
+      setLogsError(msg);
+      setLogsLoading(false);
+    }
+  }, [usesSupabase, persistCache, runBackfill]);
 
   useEffect(() => {
     if (!usesSupabase) return;
-    queueMicrotask(() => void refetchLogs());
-  }, [usesSupabase, refetchLogs]);
+    queueMicrotask(() => void syncFromRemote());
+  }, [usesSupabase, syncFromRemote]);
 
   useEffect(() => {
     if (usesSupabase) return;
     saveToStorage(logs);
   }, [logs, usesSupabase]);
 
+  const ensureAllEntriesLoaded = useCallback(async () => {
+    if (!usesSupabase || entriesLoadPhaseRef.current === 'full') return;
+    if (backfillPromiseRef.current) {
+      await backfillPromiseRef.current;
+    }
+  }, [usesSupabase]);
+
+  const ensureLogEntriesFullyLoaded = useCallback(
+    async (logId: string) => {
+      if (!usesSupabase) return;
+      await ensureAllEntriesLoaded();
+      if (entriesLoadPhaseRef.current === 'full' || fullLogIdsRef.current.has(logId)) return;
+
+      try {
+        const rows = await fetchEntryRowsForLog(logId);
+        fullLogIdsRef.current.add(logId);
+        setLogs((prev) => {
+          const merged = mergeEntryRowsIntoLogs(prev, rows);
+          persistCache(merged);
+          return merged;
+        });
+      } catch (err) {
+        console.error('[useLogsStore] ensureLogEntriesFullyLoaded', err);
+      }
+    },
+    [usesSupabase, ensureAllEntriesLoaded, persistCache],
+  );
+
+  const ensureEntriesForMonth = useCallback(
+    async (year: number, monthIndex: number) => {
+      if (!usesSupabase) return;
+      await ensureAllEntriesLoaded();
+      if (entriesLoadPhaseRef.current === 'full') return;
+
+      const key = `${year}-${String(monthIndex + 1).padStart(2, '0')}`;
+      if (loadedMonthsRef.current.has(key)) return;
+
+      const { start, end } = monthDateRange(year, monthIndex);
+      try {
+        const rows = await fetchEntryRowsForRange(start, end);
+        loadedMonthsRef.current.add(key);
+        setLogs((prev) => {
+          const merged = mergeEntryRowsIntoLogs(prev, rows);
+          persistCache(merged);
+          return merged;
+        });
+      } catch (err) {
+        console.error('[useLogsStore] ensureEntriesForMonth', err);
+      }
+    },
+    [usesSupabase, ensureAllEntriesLoaded, persistCache],
+  );
+
   const addLog = useCallback(
     async (data: Pick<Log, 'name' | 'icon' | 'color'> & { schedule: LogSchedule }) => {
       const schedule = normalizeSchedule(data.schedule);
+      const sortOrder = nextSortOrder(logs);
+
       if (usesSupabase) {
         const sb = getSupabaseClient();
         const { data: row, error } = await sb
@@ -130,6 +221,7 @@ export const useLogsStore = () => {
             color: data.color,
             notes: '',
             schedule_json: schedule,
+            sort_order: sortOrder,
           })
           .select()
           .single();
@@ -148,8 +240,14 @@ export const useLogsStore = () => {
           archived: r.archived,
           notes: r.notes ?? '',
           schedule: normalizeSchedule(r.schedule_json),
+          totalEntries: 0,
+          sortOrder: r.sort_order ?? sortOrder,
         };
-        setLogs((prev) => [...prev, newLog]);
+        setLogs((prev) => {
+          const next = sortLogsByOrder([...prev, newLog]);
+          persistCache(next);
+          return next;
+        });
         return;
       }
 
@@ -163,10 +261,15 @@ export const useLogsStore = () => {
         archived: false,
         notes: '',
         schedule,
+        totalEntries: 0,
+        sortOrder: 0,
       };
-      setLogs((prev) => [...prev, newLog]);
+      setLogs((prev) => {
+        const withOrder = { ...newLog, sortOrder: nextSortOrder(prev) };
+        return sortLogsByOrder([...prev, withOrder]);
+      });
     },
-    [usesSupabase],
+    [usesSupabase, persistCache, logs],
   );
 
   const updateLog = useCallback(
@@ -187,11 +290,13 @@ export const useLogsStore = () => {
         }
       }
 
-      setLogs((prev) =>
-        prev.map((log) => (log.id === id ? { ...log, ...updates } : log)),
-      );
+      setLogs((prev) => {
+        const next = prev.map((log) => (log.id === id ? { ...log, ...updates } : log));
+        if (usesSupabase) persistCache(next);
+        return next;
+      });
     },
-    [usesSupabase],
+    [usesSupabase, persistCache],
   );
 
   const deleteLog = useCallback(
@@ -203,10 +308,15 @@ export const useLogsStore = () => {
           console.error('[useLogsStore] deleteLog', error);
           return;
         }
+        fullLogIdsRef.current.delete(id);
       }
-      setLogs((prev) => prev.filter((log) => log.id !== id));
+      setLogs((prev) => {
+        const next = prev.filter((log) => log.id !== id);
+        if (usesSupabase) persistCache(next);
+        return next;
+      });
     },
-    [usesSupabase],
+    [usesSupabase, persistCache],
   );
 
   const archiveLog = useCallback(
@@ -219,40 +329,41 @@ export const useLogsStore = () => {
           return;
         }
       }
-      setLogs((prev) =>
-        prev.map((log) => (log.id === id ? { ...log, archived } : log)),
-      );
+      setLogs((prev) => {
+        const next = prev.map((log) => (log.id === id ? { ...log, archived } : log));
+        if (usesSupabase) persistCache(next);
+        return next;
+      });
     },
-    [usesSupabase],
+    [usesSupabase, persistCache],
   );
 
   const toggleEntry = useCallback(
     async (logId: string, date: string) => {
-      const patchEntries = (log: Log, currentlyChecked: boolean) => {
-        const entries = { ...log.entries };
-        if (currentlyChecked) delete entries[date];
-        else entries[date] = true;
-        return entries;
-      };
-
       if (!usesSupabase) {
         setLogs((prev) =>
           prev.map((log) => {
             if (log.id !== logId) return log;
-            return {
-              ...log,
-              entries: patchEntries(log, !!log.entries[date]),
-            };
+            const checked = !!log.entries[date];
+            return patchLogEntry(log, date, !checked);
           }),
         );
         if ('vibrate' in navigator) navigator.vibrate(10);
         return;
       }
 
-      const log = logs.find((l) => l.id === logId);
-      const currentlyChecked = !!log?.entries[date];
-      const sb = getSupabaseClient();
+      let currentlyChecked = false;
+      setLogs((prev) => {
+        const next = prev.map((l) => {
+          if (l.id !== logId) return l;
+          currentlyChecked = !!l.entries[date];
+          return patchLogEntry(l, date, !currentlyChecked);
+        });
+        persistCache(next);
+        return next;
+      });
 
+      const sb = getSupabaseClient();
       if (currentlyChecked) {
         const { error } = await sb
           .from('log_entries')
@@ -261,28 +372,21 @@ export const useLogsStore = () => {
           .eq('logged_date', date);
         if (error) {
           console.error('[useLogsStore] toggleEntry delete', error);
-          await refetchLogs();
+          await syncFromRemote();
           return;
         }
       } else {
         const { error } = await sb.from('log_entries').insert({ log_id: logId, logged_date: date });
         if (error) {
           console.error('[useLogsStore] toggleEntry insert', error);
-          await refetchLogs();
+          await syncFromRemote();
           return;
         }
       }
 
-      setLogs((prev) =>
-        prev.map((l) => {
-          if (l.id !== logId) return l;
-          return { ...l, entries: patchEntries(l, currentlyChecked) };
-        }),
-      );
-
       if ('vibrate' in navigator) navigator.vibrate(10);
     },
-    [usesSupabase, logs, refetchLogs],
+    [usesSupabase, syncFromRemote, persistCache],
   );
 
   const getLog = useCallback(
@@ -290,8 +394,41 @@ export const useLogsStore = () => {
     [logs],
   );
 
-  const activeLogs = logs.filter((l) => !l.archived);
-  const archivedLogs = logs.filter((l) => l.archived);
+  const reorderActiveLogs = useCallback(
+    async (orderedIds: string[]) => {
+      const orderMap = new Map(orderedIds.map((id, index) => [id, index]));
+
+      setLogs((prev) => {
+        const next = sortLogsByOrder(
+          prev.map((log) => {
+            if (log.archived) return log;
+            const order = orderMap.get(log.id);
+            if (order === undefined) return log;
+            return { ...log, sortOrder: order };
+          }),
+        );
+        if (!usesSupabase) saveToStorage(next);
+        else persistCache(next);
+        return next;
+      });
+
+      if (!usesSupabase) return;
+
+      const sb = getSupabaseClient();
+      const results = await Promise.all(
+        orderedIds.map((id, index) => sb.from('logs').update({ sort_order: index }).eq('id', id)),
+      );
+      const failed = results.find((r) => r.error);
+      if (failed?.error) {
+        console.error('[useLogsStore] reorderActiveLogs', failed.error);
+        await syncFromRemote();
+      }
+    },
+    [usesSupabase, persistCache, syncFromRemote],
+  );
+
+  const activeLogs = sortLogsByOrder(logs.filter((l) => !l.archived));
+  const archivedLogs = sortLogsByOrder(logs.filter((l) => l.archived));
 
   return {
     logs,
@@ -306,6 +443,13 @@ export const useLogsStore = () => {
     usesSupabase,
     logsLoading,
     logsError,
-    refetchLogs,
+    entriesLoadPhase,
+    refetchLogs: syncFromRemote,
+    ensureAllEntriesLoaded,
+    ensureLogEntriesFullyLoaded,
+    ensureEntriesForMonth,
+    reorderActiveLogs,
   };
 };
+
+export { clearLogsCache };

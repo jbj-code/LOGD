@@ -51,6 +51,15 @@
   flex-direction: column;
 }
 
+/* Log today sheet — taller list area than add-log stacked sheets. */
+.modal-sheet--quick-log {
+  min-height: min(72dvh, 540px);
+}
+
+.modal-sheet--quick-log .modal-body {
+  flex: 1 1 auto;
+}
+
 .modal-header {
   display: flex;
   align-items: center;

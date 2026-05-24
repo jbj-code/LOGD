@@ -35,6 +35,10 @@ const App = () => {
     logsLoading,
     logsError,
     refetchLogs,
+    ensureAllEntriesLoaded,
+    ensureLogEntriesFullyLoaded,
+    ensureEntriesForMonth,
+    reorderActiveLogs,
     updateLog,
   } = useLogsStore();
   const { theme, toggleTheme } = useTheme();
@@ -59,7 +63,7 @@ const App = () => {
     return () => window.clearTimeout(id);
   }, [splashHoldMs]);
 
-  const showSplash = !splashMinElapsed || (usesSupabase && logsLoading);
+  const showSplash = !splashMinElapsed || (usesSupabase && logsLoading && logs.length === 0);
 
   useEffect(() => {
     queueMicrotask(() => setFabMenuOpen(false));
@@ -108,8 +112,22 @@ const App = () => {
   const logsDetailId =
     screen.tab === 'logs' && screen.view === 'detail' && 'logId' in screen ? screen.logId : undefined;
   const detailLog = logsDetailId ? getLog(logsDetailId) : undefined;
-
   const showArchivedOverlay = screen.tab === 'settings' && screen.view === 'archived';
+
+  useEffect(() => {
+    if (!usesSupabase || !detailLog) return;
+    void ensureLogEntriesFullyLoaded(detailLog.id);
+  }, [usesSupabase, detailLog, ensureLogEntriesFullyLoaded]);
+
+  useEffect(() => {
+    if (!usesSupabase || screen.tab !== 'stats') return;
+    void ensureAllEntriesLoaded();
+  }, [usesSupabase, screen.tab, ensureAllEntriesLoaded]);
+
+  useEffect(() => {
+    if (!usesSupabase || !showArchivedOverlay) return;
+    void ensureAllEntriesLoaded();
+  }, [usesSupabase, showArchivedOverlay, ensureAllEntriesLoaded]);
 
   if (showSplash) {
     return (
@@ -138,6 +156,7 @@ const App = () => {
             logs={activeLogs}
             onLogSelect={navigateToDetail}
             onAddLog={() => setAddModalOpen(true)}
+            onReorderLogs={reorderActiveLogs}
           />
         );
 
@@ -145,7 +164,12 @@ const App = () => {
         return <StatsScreen logs={activeLogs} />;
 
       case 'calendar':
-        return <CalendarScreen logs={activeLogs} />;
+        return (
+          <CalendarScreen
+            logs={activeLogs}
+            onEnsureMonth={(year, month) => void ensureEntriesForMonth(year, month)}
+          />
+        );
 
       case 'settings':
         return (
@@ -163,6 +187,7 @@ const App = () => {
             logs={activeLogs}
             onLogSelect={navigateToDetail}
             onAddLog={() => setAddModalOpen(true)}
+            onReorderLogs={reorderActiveLogs}
           />
         );
     }

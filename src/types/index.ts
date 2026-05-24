@@ -52,6 +52,10 @@ export interface Log {
   notes: string;
   /** Repeat rhythm for streaks — daily by default when missing from storage. */
   schedule: LogSchedule;
+  /** Server-side total when entries are partially loaded; kept in sync on toggle. */
+  totalEntries?: number;
+  /** Custom list order — lower appears first (top-left in the home grid). */
+  sortOrder?: number;
 }
 
 export interface AppSettings {

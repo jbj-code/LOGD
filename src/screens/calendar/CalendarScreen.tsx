@@ -1,13 +1,14 @@
 // src/screens/calendar/CalendarScreen.tsx
 // Monthly calendar: tap a day to see which logs were completed.
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { Log } from '../../types';
 import { formatDateLabel, toDateString, today } from '../../utils/date';
 import './CalendarScreen.css';
 
 interface CalendarScreenProps {
   logs: Log[];
+  onEnsureMonth?: (year: number, monthIndex: number) => void;
 }
 
 const DAY_HEADERS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
@@ -16,12 +17,16 @@ const MONTH_NAMES = [
   'July', 'August', 'September', 'October', 'November', 'December',
 ];
 
-export const CalendarScreen = ({ logs }: CalendarScreenProps) => {
+export const CalendarScreen = ({ logs, onEnsureMonth }: CalendarScreenProps) => {
   const now = new Date();
   const [year, setYear] = useState(now.getFullYear());
   const [month, setMonth] = useState(now.getMonth());
   const [selectedDay, setSelectedDay] = useState<number | null>(() => new Date().getDate());
   const todayStr = today();
+
+  useEffect(() => {
+    onEnsureMonth?.(year, month);
+  }, [year, month, onEnsureMonth]);
 
   const goToMonth = (nextYear: number, nextMonth: number) => {
     setYear(nextYear);
