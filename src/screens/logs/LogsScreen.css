@@ -113,18 +113,20 @@
 }
 
 .log-card__header {
-  display: flex;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
+  column-gap: var(--space-1);
   padding: var(--space-3) var(--space-3) var(--space-1);
-  gap: var(--space-2);
 }
 
-.log-card__info {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  flex: 1;
-  min-width: 0;
+.log-card__icon.log-icon--sm {
+  width: 34px;
+  height: 34px;
+}
+
+.log-card__icon.log-icon--sm .material-symbols-rounded {
+  font-size: 19px;
 }
 
 .log-card__name {
@@ -139,12 +141,14 @@
 
 .log-card__streak {
   flex-shrink: 0;
-  font-size: var(--text-lg);
+  justify-self: end;
+  font-size: var(--text-base);
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   line-height: 1;
   color: var(--color-text-tertiary);
-  min-width: 1.25em;
+  width: calc(var(--streak-ch, 2) * 1ch);
+  min-width: 0;
   text-align: right;
 }
 

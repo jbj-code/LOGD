@@ -150,14 +150,14 @@ const LogCard = ({
       }
     >
       <div className="log-card__header">
-        <div className="log-card__info">
-          <LogIcon symbol={log.icon} color={log.color} size="sm" />
-          <span className="log-card__name">{log.name}</span>
-        </div>
-
+        <LogIcon symbol={log.icon} color={log.color} size="sm" className="log-card__icon" />
+        <span className="log-card__name">{log.name}</span>
         <span
           className={['log-card__streak', streak > 0 ? 'log-card__streak--active' : ''].filter(Boolean).join(' ')}
-          style={streak > 0 ? { color: log.color } : undefined}
+          style={{
+            ...(streak > 0 ? { color: log.color } : undefined),
+            ['--streak-ch' as string]: streak >= 100 ? 3 : 2,
+          }}
           aria-hidden
         >
           {streak}
