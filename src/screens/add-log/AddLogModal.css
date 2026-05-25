@@ -101,6 +101,12 @@
   gap: var(--space-2);
 }
 
+/* Horizontal inset so focus ring matches color swatch (not clipped by overflow). */
+.add-log__field--name {
+  padding: 4px 5px;
+  margin-inline: -5px;
+}
+
 .add-log__label {
   font-size: var(--text-sm);
   font-weight: 600;
@@ -118,7 +124,6 @@
   font-family: var(--font-family);
   color: var(--color-text-primary);
   outline: none;
-  transition: border-color var(--transition-fast);
   width: 100%;
   box-sizing: border-box;
   touch-action: manipulation;
@@ -126,6 +131,7 @@
 
 .add-log__input:focus {
   border-color: var(--color-green);
+  box-shadow: 0 0 0 2px var(--color-bg), 0 0 0 4px var(--color-green);
 }
 
 .add-log__input::placeholder {
@@ -308,10 +314,6 @@
   font-family: var(--font-family);
   cursor: pointer;
   touch-action: manipulation;
-  transition:
-    background var(--transition-fast),
-    color var(--transition-fast),
-    box-shadow var(--transition-fast);
 }
 
 .add-log-freq__tab--active {

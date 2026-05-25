@@ -40,7 +40,6 @@ export const AddLogScheduleMonthCarousel = ({
   const currentMonthIndex = new Date().getFullYear() === year ? new Date().getMonth() : 0;
   const [activeMonth, setActiveMonth] = useState(currentMonthIndex);
   const trackRef = useRef<HTMLDivElement>(null);
-  const resetKeyRef = useRef<string | undefined>(undefined);
 
   const annualCount = useMemo(
     () => countDueDatesInCalendarYear(normalized, previewCreatedAtIso, year, todayStr),
@@ -82,10 +81,7 @@ export const AddLogScheduleMonthCarousel = ({
     const track = trackRef.current;
     if (!track) return;
 
-    const isTabSwitch = resetKey !== undefined && resetKeyRef.current !== resetKey;
-    resetKeyRef.current = resetKey;
-
-    const run = () => scrollToMonth(currentMonthIndex, isTabSwitch);
+    const run = () => scrollToMonth(currentMonthIndex, false);
 
     run();
     const id = window.requestAnimationFrame(run);

@@ -134,15 +134,19 @@ export const AddLogModal = ({ isOpen, onClose, onAdd }: AddLogModalProps) => {
 
   const previewAnchorIsoRef = useRef<string>('');
 
+  const resetFrequency = () => {
+    setFrequencyTab('daily');
+    setWeekdays([1, 3, 5]);
+    setIntervalRules([defaultIntervalRule()]);
+  };
+
   const resetForm = () => {
     setName('');
     setIcon(AVAILABLE_ICONS[0]);
     setColor(LOG_COLORS[0]);
     setPanel('wizard');
     setWizardStep(1);
-    setFrequencyTab('daily');
-    setWeekdays([1, 3, 5]);
-    setIntervalRules([defaultIntervalRule()]);
+    resetFrequency();
     previewAnchorIsoRef.current = '';
   };
 
@@ -179,7 +183,16 @@ export const AddLogModal = ({ isOpen, onClose, onAdd }: AddLogModalProps) => {
     setWizardStep(3);
   };
 
-  const goBack = () => setWizardStep((s) => (s === 3 ? 2 : 1));
+  const goBack = () => {
+    if (wizardStep === 3) {
+      setWizardStep(2);
+      return;
+    }
+    if (wizardStep === 2) {
+      resetFrequency();
+      setWizardStep(1);
+    }
+  };
 
   const handleSelectIcon = (ic: string) => {
     setIcon(ic);
@@ -277,7 +290,7 @@ export const AddLogModal = ({ isOpen, onClose, onAdd }: AddLogModalProps) => {
                 </button>
               </div>
 
-              <div className="add-log__field">
+              <div className="add-log__field add-log__field--name">
                 <label className="add-log__label" htmlFor="log-name">
                   Log Name
                 </label>
