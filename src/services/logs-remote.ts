@@ -14,11 +14,19 @@ const ENTRY_PAGE_SIZE = 1000;
 
 export const recentEntriesSince = (): string => daysAgoDateString(RECENT_ENTRIES_DAYS);
 
-type EntryQueryBuilder = (
-  sb: SupabaseClient,
-) => ReturnType<ReturnType<SupabaseClient['from']>['select']>;
+type EntryPageQuery = {
+  range: (
+    from: number,
+    to: number,
+  ) => PromiseLike<{
+    data: DbEntryRow[] | null;
+    error: { message: string } | null;
+  }>;
+};
 
-async function fetchAllEntryPages(buildQuery: EntryQueryBuilder): Promise<DbEntryRow[]> {
+async function fetchAllEntryPages(
+  buildQuery: (sb: SupabaseClient) => EntryPageQuery,
+): Promise<DbEntryRow[]> {
   const all: DbEntryRow[] = [];
   let offset = 0;
 

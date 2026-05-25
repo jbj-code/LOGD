@@ -31,6 +31,10 @@ export const LogsScreen = ({ logs, onLogSelect, onAddLog, onReorderLogs }: LogsS
     handleCardPointerDown,
     handleCardPointerMove,
     handleCardPointerUp,
+    handleCardTouchStart,
+    handleCardTouchMove,
+    handleCardTouchEnd,
+    handleCardContextMenu,
     handleCardClick,
   } = useLogListReorder({
     logIds,
@@ -70,6 +74,10 @@ export const LogsScreen = ({ logs, onLogSelect, onAddLog, onReorderLogs }: LogsS
                   onPointerDown={(event) => handleCardPointerDown(event, log.id, index)}
                   onPointerMove={handleCardPointerMove}
                   onPointerUp={handleCardPointerUp}
+                  onTouchStart={(event) => handleCardTouchStart(event, log.id, index)}
+                  onTouchMove={handleCardTouchMove}
+                  onTouchEnd={handleCardTouchEnd}
+                  onContextMenu={handleCardContextMenu}
                   onClick={(event) => handleCardClick(event, () => onLogSelect(log.id))}
                 />
               );
@@ -89,6 +97,10 @@ interface LogCardProps {
   onPointerDown: (event: React.PointerEvent<HTMLButtonElement>) => void;
   onPointerMove: (event: React.PointerEvent<HTMLButtonElement>) => void;
   onPointerUp: (event: React.PointerEvent<HTMLButtonElement>) => void;
+  onTouchStart: (event: React.TouchEvent<HTMLButtonElement>) => void;
+  onTouchMove: (event: React.TouchEvent<HTMLButtonElement>) => void;
+  onTouchEnd: (event: React.TouchEvent<HTMLButtonElement>) => void;
+  onContextMenu: (event: React.MouseEvent<HTMLButtonElement>) => void;
   onClick: (event: React.MouseEvent<HTMLButtonElement>) => void;
 }
 
@@ -100,6 +112,10 @@ const LogCard = ({
   onPointerDown,
   onPointerMove,
   onPointerUp,
+  onTouchStart,
+  onTouchMove,
+  onTouchEnd,
+  onContextMenu,
   onClick,
 }: LogCardProps) => {
   const streak = getCurrentStreak(log);
@@ -122,6 +138,11 @@ const LogCard = ({
       onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}
       onPointerCancel={onPointerUp}
+      onTouchStart={onTouchStart}
+      onTouchMove={onTouchMove}
+      onTouchEnd={onTouchEnd}
+      onTouchCancel={onTouchEnd}
+      onContextMenu={onContextMenu}
       aria-label={
         reorderMode
           ? `Reorder ${log.name}`

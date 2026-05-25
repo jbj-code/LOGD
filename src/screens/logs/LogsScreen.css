@@ -63,6 +63,9 @@
   animation: log-card-wiggle 0.28s ease-in-out infinite alternate;
   touch-action: none;
   cursor: grab;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
 }
 
 .logs-screen__list--reorder .log-card--dragging {
