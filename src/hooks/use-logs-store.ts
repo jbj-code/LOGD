@@ -10,7 +10,9 @@ import { monthDateRange } from '../utils/date';
 import {
   buildLogsFromRows,
   mergeEntryRowsIntoLogs,
+  normalizeEntryDate,
   patchLogEntry,
+  type DbEntryRow,
   type DbLogRow,
 } from '../utils/log-entries';
 import {
@@ -24,6 +26,8 @@ import { clearLogsCache, readLogsCache, writeLogsCache } from '../services/log-e
 import { nextSortOrder, sortLogsByOrder, withDefaultSortOrders } from '../utils/log-sort';
 
 const STORAGE_KEY = 'LOGD-logs';
+
+const entryToggleKey = (logId: string, date: string): string => `${logId}:${date}`;
 
 const loadFromStorage = (): Log[] => {
   try {
@@ -67,6 +71,18 @@ export const useLogsStore = () => {
   const fullLogIdsRef = useRef<Set<string>>(new Set());
   const loadedMonthsRef = useRef<Set<string>>(new Set());
   const syncGenerationRef = useRef(0);
+  const pendingTogglesRef = useRef<Set<string>>(new Set());
+
+  const mergeRowsIntoLogs = useCallback((logs: Log[], rows: DbEntryRow[]): Log[] => {
+    const pending = pendingTogglesRef.current;
+    if (pending.size === 0) return mergeEntryRowsIntoLogs(logs, rows);
+
+    const filtered = rows.filter((row) => {
+      const date = normalizeEntryDate(row.logged_date);
+      return !pending.has(entryToggleKey(row.log_id, date));
+    });
+    return mergeEntryRowsIntoLogs(logs, filtered);
+  }, []);
 
   const persistCache = useCallback(
     (nextLogs: Log[]) => {
@@ -86,7 +102,7 @@ export const useLogsStore = () => {
           if (syncGenerationRef.current !== generation) return;
 
           setLogs((prev) => {
-            const merged = mergeEntryRowsIntoLogs(prev, olderRows);
+            const merged = mergeRowsIntoLogs(prev, olderRows);
             persistCache(merged);
             return merged;
           });
@@ -101,7 +117,7 @@ export const useLogsStore = () => {
 
       return backfillPromiseRef.current;
     },
-    [persistCache],
+    [mergeRowsIntoLogs, persistCache],
   );
 
   const syncFromRemote = useCallback(async () => {
@@ -170,7 +186,7 @@ export const useLogsStore = () => {
         const rows = await fetchEntryRowsForLog(logId);
         fullLogIdsRef.current.add(logId);
         setLogs((prev) => {
-          const merged = mergeEntryRowsIntoLogs(prev, rows);
+          const merged = mergeRowsIntoLogs(prev, rows);
           persistCache(merged);
           return merged;
         });
@@ -178,7 +194,7 @@ export const useLogsStore = () => {
         console.error('[useLogsStore] ensureLogEntriesFullyLoaded', err);
       }
     },
-    [usesSupabase, ensureAllEntriesLoaded, persistCache],
+    [usesSupabase, ensureAllEntriesLoaded, mergeRowsIntoLogs, persistCache],
   );
 
   const ensureEntriesForMonth = useCallback(
@@ -195,7 +211,7 @@ export const useLogsStore = () => {
         const rows = await fetchEntryRowsForRange(start, end);
         loadedMonthsRef.current.add(key);
         setLogs((prev) => {
-          const merged = mergeEntryRowsIntoLogs(prev, rows);
+          const merged = mergeRowsIntoLogs(prev, rows);
           persistCache(merged);
           return merged;
         });
@@ -203,7 +219,7 @@ export const useLogsStore = () => {
         console.error('[useLogsStore] ensureEntriesForMonth', err);
       }
     },
-    [usesSupabase, ensureAllEntriesLoaded, persistCache],
+    [usesSupabase, ensureAllEntriesLoaded, mergeRowsIntoLogs, persistCache],
   );
 
   const addLog = useCallback(
@@ -354,37 +370,48 @@ export const useLogsStore = () => {
 
       let currentlyChecked = false;
       setLogs((prev) => {
-        const next = prev.map((l) => {
-          if (l.id !== logId) return l;
-          currentlyChecked = !!l.entries[date];
-          return patchLogEntry(l, date, !currentlyChecked);
-        });
-        persistCache(next);
-        return next;
+        const match = prev.find((l) => l.id === logId);
+        currentlyChecked = !!match?.entries[date];
+        return prev;
       });
 
+      const toggleKey = entryToggleKey(logId, date);
+      pendingTogglesRef.current.add(toggleKey);
       const sb = getSupabaseClient();
-      if (currentlyChecked) {
-        const { error } = await sb
-          .from('log_entries')
-          .delete()
-          .eq('log_id', logId)
-          .eq('logged_date', date);
-        if (error) {
-          console.error('[useLogsStore] toggleEntry delete', error);
-          await syncFromRemote();
-          return;
-        }
-      } else {
-        const { error } = await sb.from('log_entries').insert({ log_id: logId, logged_date: date });
-        if (error) {
-          console.error('[useLogsStore] toggleEntry insert', error);
-          await syncFromRemote();
-          return;
-        }
-      }
 
-      if ('vibrate' in navigator) navigator.vibrate(10);
+      try {
+        if (currentlyChecked) {
+          const { data, error } = await sb
+            .from('log_entries')
+            .delete()
+            .eq('log_id', logId)
+            .eq('logged_date', date)
+            .select('log_id');
+          if (error) throw error;
+          if (!data?.length) {
+            throw new Error(
+              'Delete matched no rows — run supabase/schema.sql grants (anon needs DELETE on log_entries)',
+            );
+          }
+        } else {
+          const { error } = await sb.from('log_entries').insert({ log_id: logId, logged_date: date });
+          if (error) throw error;
+        }
+
+        setLogs((prev) => {
+          const next = prev.map((l) =>
+            l.id !== logId ? l : patchLogEntry(l, date, !currentlyChecked),
+          );
+          persistCache(next);
+          return next;
+        });
+        if ('vibrate' in navigator) navigator.vibrate(10);
+      } catch (err) {
+        console.error('[useLogsStore] toggleEntry', err);
+        await syncFromRemote();
+      } finally {
+        pendingTogglesRef.current.delete(toggleKey);
+      }
     },
     [usesSupabase, syncFromRemote, persistCache],
   );

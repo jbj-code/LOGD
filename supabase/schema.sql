@@ -42,6 +42,7 @@ create index if not exists log_entries_logged_date_idx on public.log_entries (lo
 
 grant usage on schema public to anon, authenticated;
 grant select, insert, update, delete on table public.logs to anon, authenticated;
+-- DELETE on log_entries is required for unchecking a day (toggle off). Re-run this file if uncheck flashes then reverts.
 grant select, insert, update, delete on table public.log_entries to anon, authenticated;
 
 -- Solo dev: no Auth yet — turn RLS off so policies are not required.
